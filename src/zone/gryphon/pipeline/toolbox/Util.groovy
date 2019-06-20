@@ -24,8 +24,12 @@ def withTimestamps(Closure body) {
     }
 }
 
+static String entropy() {
+    return UUID.randomUUID().toString().replace("-", "")
+}
+
 def withRandomWorkspace(Closure body) {
-    ws(UUID.randomUUID().toString()) {
+    ws(entropy()) {
         body()
     }
 }

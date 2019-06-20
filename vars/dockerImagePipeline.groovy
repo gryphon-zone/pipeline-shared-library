@@ -79,7 +79,9 @@ def call(String githubOrganization, Closure body) {
                     Properties: ${calculatedJobProperties}
                     """.stripIndent()
 
-                    def image = docker.build(tags[0], "--pull --progress 'plain' .")
+                    String initialTag = Util.entropy()
+
+                    def image = docker.build(initialTag, "--pull --progress 'plain' .")
                 }
             }
         }
