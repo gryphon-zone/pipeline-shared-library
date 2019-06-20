@@ -12,43 +12,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
+
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
+import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
+import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
 
 def call(String githubOrganization, Closure body) {
+
+    // only instantiation of `Util` object should happen outside of timestamps block
     final Util util = new Util()
-    final DockerUtilities dockerUtilities = new DockerUtilities()
 
     util.withTimestamps {
+        stage('Parse Configuration') {
+            CheckoutInformation checkoutInformation
 
-        ConfigurationHelper helper = new ConfigurationHelper()
+            final DockerUtilities dockerUtilities = new DockerUtilities()
 
-        DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+            ConfigurationHelper helper = new ConfigurationHelper()
 
-        List props = helper.calculateProperties(config.jobProperties)
+            DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
 
-        // set job properties
-        //noinspection GroovyAssignabilityCheck
-        properties(props)
+            List props = helper.calculateProperties(config.jobProperties)
 
-        JobInformation info = util.getJobInformation()
+            // set job properties
+            //noinspection GroovyAssignabilityCheck
+            properties(props)
 
-        String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
-        String artifact = config.dockerArtifact ?: info.repository
+            stage('Await Executor') {
+                node('docker-cli') {
 
-        echo "${env.getEnvironment()}"
+                    stage ('Checkout Project') {
+                        checkoutInformation = util.checkoutProject()
+                    }
 
-        echo """\
-        Github Organization: ${githubOrganization}
-        Docker Organization: ${dockerOrganization}
-        Docker Artifact: ${artifact}
-        Docker Tags: ${tags}
-        Properties: ${props}
-        """.stripIndent()
+                    echo "hash: ${checkoutInformation.gitCommit}"
 
+                    JobInformation info = util.getJobInformation()
 
+                    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+                    String artifact = config.dockerArtifact ?: info.repository
+
+                    echo "${env.getEnvironment()}"
+
+                    echo """\
+            Github Organization: ${githubOrganization}
+            Docker Organization: ${dockerOrganization}
+            Docker Artifact: ${artifact}
+            Docker Tags: ${tags}
+            Properties: ${props}
+            """.stripIndent()
+
+                }
+            }
+        }
     }
 }

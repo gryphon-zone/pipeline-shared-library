@@ -15,6 +15,7 @@
 
 package zone.gryphon.pipeline.toolbox
 
+import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 
 def withTimestamps(Closure body) {
@@ -36,5 +37,22 @@ JobInformation getJobInformation() {
     out.organization = parts[0]
     out.repository = parts[1]
     out.branch = parts[2]
+    return out
+}
+
+CheckoutInformation checkoutProject() {
+    def vars = checkout scm
+
+    CheckoutInformation out = new CheckoutInformation()
+    out.gitCommit = vars.GIT_COMMIT
+    out.gitPreviousCommit = vars.GIT_PREVIOUS_COMMIT
+    out.gitPreviousSuccessfulCommit = vars.GIT_PREVIOUS_SUCCESSFUL_COMMIT
+    out.gitBranch = vars.GIT_BRANCH
+    out.gitLocalBranch = vars.GIT_LOCAL_BRANCH
+    out.gitUrl = vars.GIT_URL
+    out.gitCommitterName = vars.GIT_COMMITTER_NAME
+    out.gitAuthorName = vars.GIT_AUTHOR_NAME
+    out.gitCommitterEmail = vars.GIT_COMMITTER_EMAIL
+    out.gitAuthorEmail = vars.GIT_AUTHOR_EMAIL
     return out
 }
