@@ -31,9 +31,7 @@ def call(String githubOrganization, Closure body) {
         //noinspection GroovyAssignabilityCheck
         properties(props)
 
-        echo "${env.getEnvironment()}"
-
-        echo util.getJobInformation()
+        echo "${util.getJobInformation()}"
 
         echo """\
         Github Organization: ${githubOrganization}
