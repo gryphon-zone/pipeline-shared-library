@@ -65,19 +65,21 @@ def call(String githubOrganization, Closure body) {
                     String versionTag = "${versionTagBase}${shortHash}"
                     String branchTag = "${info.branch}-${shortHash}"
 
-                    tags = [versionTag, branchTag]
+                    tags = [branchTag, versionTag]
 
                     if (deployable) {
                         tags.add('latest')
                     }
 
                     echo """\
-            Github Organization: ${githubOrganization}
-            Docker Organization: ${dockerOrganization}
-            Docker Artifact: ${artifact}
-            Docker Tags: ${tags}
-            Properties: ${calculatedJobProperties}
-            """.stripIndent()
+                    Github Organization: ${githubOrganization}
+                    Docker Organization: ${dockerOrganization}
+                    Docker Artifact: ${artifact}
+                    Docker Tags: ${tags}
+                    Properties: ${calculatedJobProperties}
+                    """.stripIndent()
+
+                    def image = docker.build(tags[0], "--pull --progress 'plain' .")
                 }
             }
         }
