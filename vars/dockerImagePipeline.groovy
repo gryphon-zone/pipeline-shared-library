@@ -14,6 +14,7 @@
  */
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
+import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.Util
 
 def call(String githubOrganization, Closure body) {
@@ -31,7 +32,9 @@ def call(String githubOrganization, Closure body) {
         //noinspection GroovyAssignabilityCheck
         properties(props)
 
-        echo "${util.getJobInformation()}"
+        JobInformation info = util.getJobInformation()
+
+        echo "${info.toString()}"
 
         echo """\
         Github Organization: ${githubOrganization}
