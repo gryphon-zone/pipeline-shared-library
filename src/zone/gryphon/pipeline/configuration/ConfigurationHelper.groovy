@@ -15,9 +15,7 @@
 
 package zone.gryphon.pipeline.configuration
 
-class ConfigurationHelper {
 
-    static final String buildDiscarderName = 'buildDiscarder'
 
 
     def <T> T configure(Closure body, T config) {
@@ -35,7 +33,7 @@ class ConfigurationHelper {
             props.addAll(providedProperties)
         }
 
-        int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarderName}
+        int index = props.findIndexOf {it -> it.getSymbol() == 'buildDiscarder'}
 
         // no build discarder, install default
         if (index < 0) {
@@ -45,4 +43,3 @@ class ConfigurationHelper {
         return props
     }
 
-}
