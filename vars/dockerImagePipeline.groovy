@@ -24,4 +24,9 @@ def call(String organization, Closure body) {
 
     echo "properties: ${config.properties}"
 
+
+    config.properties.each {it ->
+        echo it.getSymbol()
+    }
+
 }
