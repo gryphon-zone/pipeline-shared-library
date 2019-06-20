@@ -94,7 +94,7 @@ def call(String githubOrganization, Closure body) {
                     if (deployable) {
                         stage('Push Docker image') {
                             withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                sh "set -x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+                                sh "set +x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
                                 tags.each { tag ->
                                     image.push(tag)
