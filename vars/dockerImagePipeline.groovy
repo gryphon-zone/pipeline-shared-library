@@ -22,10 +22,10 @@ def call(String organization, Closure body) {
 
     echo "config: ${config}"
 
-    echo "properties: ${config.properties}"
+    echo "properties: ${config.jobProperties}"
 
 
-    config.properties.each {it ->
+    config.jobProperties.each {it ->
         echo "${it.getSymbol()}"
     }
 

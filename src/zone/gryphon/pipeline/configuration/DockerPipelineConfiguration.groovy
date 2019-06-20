@@ -19,7 +19,9 @@ class DockerPipelineConfiguration {
 
     String organization = 'unset'
 
-    List<?> properties = []
+    List<?> jobProperties = []
+
+
 
 
 }
