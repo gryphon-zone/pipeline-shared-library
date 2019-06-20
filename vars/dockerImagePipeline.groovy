@@ -17,15 +17,18 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 
 def call(String organization, Closure body) {
     echo "organization: ${organization}"
-    ConfigurationHelper helper = new ConfigurationHelper(this)
 
-    DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
+    dockerNode('gryphonzone/docker-cli') {
+        ConfigurationHelper helper = new ConfigurationHelper(this)
 
-    List props = helper.calculateProperties(config.jobProperties)
+        DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
 
-    props.each {it ->
-        echo "${it.getSymbol()}"
+        List props = helper.calculateProperties(config.jobProperties)
+
+        props.each { it ->
+            echo "${it.getSymbol()}"
+        }
+
+        properties(props)
     }
-
-    properties(props)
 }
