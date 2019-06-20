@@ -83,8 +83,22 @@ def call(String githubOrganization, Closure body) {
 
                     def image = docker.build(initialTag, "--pull --progress 'plain' .")
 
-                    tags.each { tag ->
-                        image.tag(tag)
+                    stage('Tag docker image') {
+                        tags.each { tag ->
+                            image.tag(tag)
+                        }
+                    }
+
+                    if (deployable) {
+                        stage('Push Docker image') {
+                            withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'username', usernameVariable: 'password')]) {
+                                sh "set -x && echo \"${DOCKER_CREDENTIALS_PSW}\" | docker login -u \"${DOCKER_CREDENTIALS_USR}\" --password-stdin"
+
+                                tags.each { tag ->
+                                    image.push(tag)
+                                }
+                            }
+                        }
                     }
                 }
             }
