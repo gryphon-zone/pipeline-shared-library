@@ -60,10 +60,12 @@ def call(String githubOrganization, Closure body) {
                     String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     String artifact = config.dockerArtifact ?: info.repository
 
+                    String shortHash = checkoutInformation.gitCommit.substring(0, 7)
                     String versionTagBase = config.version ? ("${config.version}.${info.build}-") : ""
-                    String versionTag = "${versionTagBase}${checkoutInformation.gitCommit.substring(0, 7)}"
+                    String versionTag = "${versionTagBase}${shortHash}"
+                    String branchTag = "${info.branch}-${shortHash}"
 
-                    tags = [versionTag]
+                    tags = [versionTag, branchTag]
 
                     if (deployable) {
                         tags.add('latest')
