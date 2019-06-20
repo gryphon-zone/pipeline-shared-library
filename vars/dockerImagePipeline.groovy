@@ -83,11 +83,11 @@ def call(String githubOrganization, Closure body) {
 
                     String initialTag = Util.entropy()
 
-                    def image = docker.build(initialTag, "--pull --progress 'plain' .")
+                    def image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
 
                     stage('Tag docker image') {
                         tags.each { tag ->
-                            image.tag("${dockerArtifact}:${tag}")
+                            image.tag(dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag))
                         }
                     }
 
@@ -97,7 +97,7 @@ def call(String githubOrganization, Closure body) {
                                 sh "set -x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
                                 tags.each { tag ->
-                                    image.push("${dockerArtifact}:${tag}")
+                                    image.push(dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag))
                                 }
                             }
                         }

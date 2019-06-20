@@ -18,3 +18,7 @@ package zone.gryphon.pipeline.toolbox
 String convertToDockerHubName(String name) {
     return name.replaceAll("\\W", "")
 }
+
+String coordinatesFor(String org, String artifact, String tag) {
+    return "${org}/${artifact}:${tag}"
+}
