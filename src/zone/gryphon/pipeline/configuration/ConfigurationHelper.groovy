@@ -32,6 +32,8 @@ class ConfigurationHelper {
 
         int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarder}
 
+        echo 'asdf'
+
         println("Index: ${index}")
 
         return props
