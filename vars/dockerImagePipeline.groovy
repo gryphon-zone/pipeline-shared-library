@@ -29,7 +29,7 @@ def call(String githubOrganization, Closure body) {
         //noinspection GroovyAssignabilityCheck
         properties(props)
 
-        echo "${env}"
+        echo "${env.environment}"
 
         echo """\
         Github Organization: ${githubOrganization}
