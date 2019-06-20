@@ -39,6 +39,8 @@ class DockerPipelineConfiguration {
      */
     String dockerCredentialsId = 'docker'
 
+    String version = '1.0'
+
 
     void jobProperties(List jobProperties) {
         this.jobProperties = jobProperties

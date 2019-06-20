@@ -24,6 +24,12 @@ def withTimestamps(Closure body) {
     }
 }
 
+def withRandomWorkspace(Closure body) {
+    ws(UUID.randomUUID().toString()) {
+        body()
+    }
+}
+
 JobInformation getJobInformation() {
     String info = "${env.JOB_NAME}"
 
@@ -37,6 +43,7 @@ JobInformation getJobInformation() {
     out.organization = parts[0]
     out.repository = parts[1]
     out.branch = parts[2]
+    out.build = Integer.parseInt("${env.BUILD_NUMBER}")
     return out
 }
 

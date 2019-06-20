@@ -20,8 +20,9 @@ class JobInformation {
     String organization
     String repository
     String branch
+    int build
 
     String toString() {
-        return "{\"organization\": \"${organization}\", \"repository\": \"${repository}\", \"branch\": \"${branch}\"}"
+        return "{\"organization\": \"${organization}\", \"repository\": \"${repository}\", \"branch\": \"${branch}\", \"build\": \"${build}\"}"
     }
 }

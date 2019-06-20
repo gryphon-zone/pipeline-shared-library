@@ -26,45 +26,55 @@ def call(String githubOrganization, Closure body) {
     final Util util = new Util()
 
     util.withTimestamps {
-        stage('Parse Configuration') {
-            CheckoutInformation checkoutInformation
-
+        util.withRandomWorkspace {
             final DockerUtilities dockerUtilities = new DockerUtilities()
+            final ConfigurationHelper helper = new ConfigurationHelper()
 
-            ConfigurationHelper helper = new ConfigurationHelper()
+            CheckoutInformation checkoutInformation
+            DockerPipelineConfiguration config
+            List calculatedJobProperties
+            List tags
 
-            DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+            stage('Parse Configuration') {
+                config = helper.configure(body, new DockerPipelineConfiguration())
 
-            List props = helper.calculateProperties(config.jobProperties)
+                calculatedJobProperties = helper.calculateProperties(config.jobProperties)
 
-            // set job properties
-            //noinspection GroovyAssignabilityCheck
-            properties(props)
+                // set job properties
+                //noinspection GroovyAssignabilityCheck
+                properties(calculatedJobProperties)
+            }
 
             stage('Await Executor') {
                 node('docker-cli') {
 
-                    stage ('Checkout Project') {
+                    stage('Checkout Project') {
                         checkoutInformation = util.checkoutProject()
                     }
 
-                    echo "hash: ${checkoutInformation.gitCommit}"
+                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
 
                     JobInformation info = util.getJobInformation()
 
                     String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     String artifact = config.dockerArtifact ?: info.repository
 
-                    echo "${env.getEnvironment()}"
+                    String versionTagBase = config.version ? ("${config.version}.${info.build}-") : ""
+                    String versionTag = "${versionTagBase}${checkoutInformation.gitCommit.substring(0, 7)}"
+
+                    tags = [versionTag]
+
+                    if (deployable) {
+                        tags.add('latest')
+                    }
 
                     echo """\
             Github Organization: ${githubOrganization}
             Docker Organization: ${dockerOrganization}
             Docker Artifact: ${artifact}
             Docker Tags: ${tags}
-            Properties: ${props}
+            Properties: ${calculatedJobProperties}
             """.stripIndent()
-
                 }
             }
         }
