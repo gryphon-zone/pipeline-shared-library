@@ -39,7 +39,7 @@ def call(String githubOrganization, Closure body) {
         String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
         String artifact = config.dockerArtifact ?: info.repository
 
-        echo "${env.environment}"
+        echo "${env.getEnvironment()}"
 
         echo """\
         Github Organization: ${githubOrganization}
