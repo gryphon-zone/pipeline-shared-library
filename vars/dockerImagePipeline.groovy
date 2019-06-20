@@ -18,7 +18,7 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 def call(String organization, Closure body) {
     echo "organization: ${organization}"
 
-    node('docker-cli') {
+    node('jnlp-slave') {
         ConfigurationHelper helper = new ConfigurationHelper(this)
 
         DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
