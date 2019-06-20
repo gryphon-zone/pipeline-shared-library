@@ -16,7 +16,7 @@ import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.toolbox.Util
 
-def call(String organization, Closure body) {
+def call(String githubOrganization, Closure body) {
     new Util().withTimestamps {
 
         ConfigurationHelper helper = new ConfigurationHelper()
@@ -29,7 +29,14 @@ def call(String organization, Closure body) {
         //noinspection GroovyAssignabilityCheck
         properties(props)
 
+
+        sh 'env'
+
         echo """\
+        Github Organization: ${githubOrganization}
+        Docker Organization: ${dockerOrganization}
+        Docker Artifact: ${artifact}
+        Docker Tags: ${tags}
         Properties: ${props}
         """.stripIndent()
     }
