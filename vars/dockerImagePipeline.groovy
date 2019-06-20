@@ -14,10 +14,12 @@
  */
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
-import zone.gryphon.pipeline.configuration.toolbox.Util
+import zone.gryphon.pipeline.toolbox.Util
 
 def call(String githubOrganization, Closure body) {
-    new Util().withTimestamps {
+    final Util util = new Util()
+
+    util.withTimestamps {
 
         ConfigurationHelper helper = new ConfigurationHelper()
 
@@ -30,6 +32,8 @@ def call(String githubOrganization, Closure body) {
         properties(props)
 
         echo "${env.getEnvironment()}"
+
+        util.getJobInformation()
 
         echo """\
         Github Organization: ${githubOrganization}

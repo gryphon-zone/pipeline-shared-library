@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
-package zone.gryphon.pipeline.configuration.toolbox
+package zone.gryphon.pipeline.model
 
-def withTimestamps(Closure body) {
-    timestamps {
-        body()
-    }
+class JobInformation {
+
+    String organization
+    String repository
+    String branch
+
 }
