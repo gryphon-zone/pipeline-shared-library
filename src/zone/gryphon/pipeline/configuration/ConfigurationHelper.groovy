@@ -20,7 +20,7 @@ class ConfigurationHelper {
     static final String buildDiscarderName = 'buildDiscarder'
 
 
-    static <T> T configure(Closure body, T config) {
+    def <T> T configure(Closure body, T config) {
         body.resolveStrategy = Closure.OWNER_FIRST
         body.delegate = config
         body()
@@ -28,7 +28,7 @@ class ConfigurationHelper {
     }
 
 
-    static List calculateProperties(List providedProperties) {
+    List calculateProperties(List providedProperties) {
         List props = []
 
         if (providedProperties) {

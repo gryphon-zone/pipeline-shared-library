@@ -19,9 +19,11 @@ def call(String organization, Closure body) {
     echo "organization: ${organization}"
 
     node('jnlp-slave') {
-        DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
+        ConfigurationHelper helper = new ConfigurationHelper();
 
-        List props = ConfigurationHelper.calculateProperties(config.jobProperties)
+        DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+
+        List props = helper.calculateProperties(config.jobProperties)
 
         props.each { asdf ->
             echo "${asdf.getSymbol()}"
