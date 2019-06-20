@@ -15,10 +15,12 @@
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.model.JobInformation
+import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
 
 def call(String githubOrganization, Closure body) {
     final Util util = new Util()
+    final DockerUtilities dockerUtilities = new DockerUtilities()
 
     util.withTimestamps {
 
@@ -34,7 +36,10 @@ def call(String githubOrganization, Closure body) {
 
         JobInformation info = util.getJobInformation()
 
-        echo "${info.toString()}"
+        String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+        String artifact = config.dockerArtifact ?: info.repository
+
+        echo "${env.environment}"
 
         echo """\
         Github Organization: ${githubOrganization}
