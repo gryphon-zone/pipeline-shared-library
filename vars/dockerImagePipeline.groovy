@@ -81,8 +81,6 @@ def call(String githubOrganization, Closure body) {
 
                     String initialTag = Util.entropy()
 
-                    tool name: 'Default', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
-
                     def image = docker.build(initialTag, "--pull --progress 'plain' .")
                 }
             }
