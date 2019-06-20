@@ -22,4 +22,6 @@ def call(String organization, Closure body) {
 
     echo "config: ${config}"
 
+    echo "properties: ${config.properties}"
+
 }
