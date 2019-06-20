@@ -53,9 +53,9 @@ def call(String githubOrganization, Closure body) {
                         checkoutInformation = util.checkoutProject()
                     }
 
-                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
-
                     JobInformation info = util.getJobInformation()
+
+                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
 
                     String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     String artifact = config.dockerArtifact ?: info.repository
