@@ -17,6 +17,8 @@ package zone.gryphon.pipeline.configuration
 
 class ConfigurationHelper {
 
+    static String buildDiscarder = 'buildDiscarder'
+
     static <T> T configure(Closure body, T config) {
         body.resolveStrategy = Closure.OWNER_FIRST
         body.delegate = config
@@ -28,9 +30,9 @@ class ConfigurationHelper {
     static List calculateProperties(List providedProperties) {
         List props = providedProperties ?: []
 
-        props.each {it ->
+        int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarder}
 
-        }
+        println("Index: ${index}")
 
         return props
     }
