@@ -1,0 +1,10 @@
+target/
+release.properties
+.attach_pid*
+tmp.*
+*dependency-reduced-pom.xml
+*.iml
+*.idea
+*.releaseBackup
+*.versionsBackup
+*.bak
