@@ -29,6 +29,8 @@ def call(String githubOrganization, Closure body) {
         //noinspection GroovyAssignabilityCheck
         properties(props)
 
+        echo "${env}"
+
         echo """\
         Github Organization: ${githubOrganization}
         Docker Organization: ${dockerOrganization}
@@ -37,6 +39,6 @@ def call(String githubOrganization, Closure body) {
         Properties: ${props}
         """.stripIndent()
 
-        echo "${env}"
+
     }
 }
