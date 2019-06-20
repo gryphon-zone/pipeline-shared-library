@@ -21,4 +21,7 @@ class JobInformation {
     String repository
     String branch
 
+    String toString() {
+        return "{\"organization\": \"${organization}\", \"repository\": \"${repository}\", \"branch\": \"${branch}\"}"
+    }
 }

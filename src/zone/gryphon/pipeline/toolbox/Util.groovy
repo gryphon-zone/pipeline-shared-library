@@ -24,9 +24,17 @@ def withTimestamps(Closure body) {
 }
 
 JobInformation getJobInformation() {
-    def info = env.JOB_NAME
+    String info = "${env.JOB_NAME}"
 
-    echo "${info}"
+    String[] parts = info.split("/")
 
-    return null
+    if (parts.length != 3) {
+        throw new RuntimeException("Unable to parse job information from \"${info}\", does not follow expected \"organization/artifact/branch\" pattern")
+    }
+
+    JobInformation out = new JobInformation()
+    out.organization = parts[0]
+    out.repository = parts[1]
+    out.branch = parts[2]
+    return out
 }

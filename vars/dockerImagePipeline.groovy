@@ -33,7 +33,7 @@ def call(String githubOrganization, Closure body) {
 
         echo "${env.getEnvironment()}"
 
-        util.getJobInformation()
+        echo util.getJobInformation()
 
         echo """\
         Github Organization: ${githubOrganization}
