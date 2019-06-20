@@ -23,8 +23,14 @@ def call(String organization, Closure body) {
 
         DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
 
+        List props = helper.calculateProperties(config.jobProperties)
+
         // set job properties
         //noinspection GroovyAssignabilityCheck
-        properties(helper.calculateProperties(config.jobProperties))
+        properties(props)
+
+        echo """\
+        Properties: ${props}
+        """.trimIndent()
     }
 }
