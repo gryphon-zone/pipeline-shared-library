@@ -71,6 +71,8 @@ def call(String githubOrganization, Closure body) {
                         tags.add('latest')
                     }
 
+                    String dockerArtifact = "${dockerOrganization}/${artifact}"
+
                     echo """\
                     Github Organization: ${githubOrganization}
                     Docker Organization: ${dockerOrganization}
@@ -85,7 +87,7 @@ def call(String githubOrganization, Closure body) {
 
                     stage('Tag docker image') {
                         tags.each { tag ->
-                            image.tag(tag)
+                            image.tag("${dockerArtifact}:${tag}")
                         }
                     }
 
@@ -95,7 +97,7 @@ def call(String githubOrganization, Closure body) {
                                 sh "set -x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
                                 tags.each { tag ->
-                                    image.push(tag)
+                                    image.push("${dockerArtifact}:${tag}")
                                 }
                             }
                         }
