@@ -82,6 +82,10 @@ def call(String githubOrganization, Closure body) {
                     String initialTag = Util.entropy()
 
                     def image = docker.build(initialTag, "--pull --progress 'plain' .")
+
+                    tags.each { tag ->
+                        image.tag(tag)
+                    }
                 }
             }
         }
