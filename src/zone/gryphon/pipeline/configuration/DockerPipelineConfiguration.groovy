@@ -22,5 +22,10 @@ class DockerPipelineConfiguration {
     List jobProperties = []
 
 
+    void jobProperties(List jobProperties) {
+        this.jobProperties = jobProperties
+    }
+
+
 
 }
