@@ -25,8 +25,8 @@ def call(String organization, Closure body) {
 
         List props = helper.calculateProperties(config.jobProperties)
 
-        props.each { it ->
-            echo "${it.getSymbol()}"
+        props.each { asdf ->
+            echo "${asdf.getSymbol()}"
         }
 
         properties(props)
