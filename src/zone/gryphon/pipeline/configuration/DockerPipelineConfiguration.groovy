@@ -17,9 +17,25 @@ package zone.gryphon.pipeline.configuration
 
 class DockerPipelineConfiguration {
 
-    String organization = 'unset'
-
+    /**
+     * Custom job properties
+     */
     List jobProperties = []
+
+    /**
+     * Name of the dockerhub organization to public the image to
+     */
+    String dockerOrganization = null
+
+    /**
+     * name of docker artifact to publish.
+     */
+    String dockerArtifact = null
+
+    /**
+     * ID of username/password credentials to use to log into docker
+     */
+    String dockerCredentialsId = 'docker'
 
 
     void jobProperties(List jobProperties) {

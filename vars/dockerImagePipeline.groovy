@@ -20,13 +20,11 @@ def call(String organization, Closure body) {
 
     DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
 
-    echo "config: ${config}"
+    List props = ConfigurationHelper.calculateProperties(config.jobProperties)
 
-    echo "properties: ${config.jobProperties}"
-
-
-    config.jobProperties.each {it ->
+    props.each {it ->
         echo "${it.getSymbol()}"
     }
 
+    properties(props)
 }

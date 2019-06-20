@@ -24,4 +24,15 @@ class ConfigurationHelper {
         return config
     }
 
+
+    static List calculateProperties(List providedProperties) {
+        List props = providedProperties ?: []
+
+        props.each {it ->
+
+        }
+
+        return props
+    }
+
 }
