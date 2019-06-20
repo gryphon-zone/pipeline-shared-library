@@ -18,7 +18,7 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 def call(String organization, Closure body) {
     echo "organization: ${organization}"
 
-    dockerNode('gryphonzone/docker-cli') {
+    dockerNode(image: 'gryphonzone/docker-cli', remoteFs: '/asdf') {
         ConfigurationHelper helper = new ConfigurationHelper(this)
 
         DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
