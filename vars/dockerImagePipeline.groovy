@@ -26,27 +26,28 @@ def call(String githubOrganization, Closure body) {
     final Util util = new Util()
 
     util.withTimestamps {
-        util.withRandomWorkspace {
-            final DockerUtilities dockerUtilities = new DockerUtilities()
-            final ConfigurationHelper helper = new ConfigurationHelper()
 
-            CheckoutInformation checkoutInformation
-            DockerPipelineConfiguration config
-            List calculatedJobProperties
-            List tags
+        final DockerUtilities dockerUtilities = new DockerUtilities()
+        final ConfigurationHelper helper = new ConfigurationHelper()
 
-            stage('Parse Configuration') {
-                config = helper.configure(body, new DockerPipelineConfiguration())
+        CheckoutInformation checkoutInformation
+        DockerPipelineConfiguration config
+        List calculatedJobProperties
+        List tags
 
-                calculatedJobProperties = helper.calculateProperties(config.jobProperties)
+        stage('Parse Configuration') {
+            config = helper.configure(body, new DockerPipelineConfiguration())
 
-                // set job properties
-                //noinspection GroovyAssignabilityCheck
-                properties(calculatedJobProperties)
-            }
+            calculatedJobProperties = helper.calculateProperties(config.jobProperties)
 
-            stage('Await Executor') {
-                node('docker-cli') {
+            // set job properties
+            //noinspection GroovyAssignabilityCheck
+            properties(calculatedJobProperties)
+        }
+
+        stage('Await Executor') {
+            node('docker-cli') {
+                util.withRandomWorkspace {
 
                     stage('Checkout Project') {
                         checkoutInformation = util.checkoutProject()
