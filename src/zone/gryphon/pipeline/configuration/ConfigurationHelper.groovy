@@ -39,7 +39,7 @@ class ConfigurationHelper {
 
         int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarder}
 
-        scope.sh "Index: ${index}"
+        scope.echo "Index: ${index}"
 
         return props
     }
