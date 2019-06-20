@@ -12,19 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
-import zone.gryphon.pipeline.configuration.ConfigurationHelper
-import zone.gryphon.pipeline.configuration.toolbox.Util
 
-def call(String organization, Closure body) {
-    new Util().withTimestamps {
+package zone.gryphon.pipeline.configuration.toolbox
 
-        ConfigurationHelper helper = new ConfigurationHelper()
-
-        DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
-
-        // set job properties
-        //noinspection GroovyAssignabilityCheck
-        properties(helper.calculateProperties(config.jobProperties))
+def withTimestamps(Closure body) {
+    timestamps {
+        body()
     }
 }
