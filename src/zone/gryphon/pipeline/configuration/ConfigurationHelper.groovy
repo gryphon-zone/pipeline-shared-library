@@ -19,6 +19,13 @@ class ConfigurationHelper {
 
     static String buildDiscarder = 'buildDiscarder'
 
+    Object scope
+
+    ConfigurationHelper(Object scope) {
+        this.scope = scope
+    }
+
+
     static <T> T configure(Closure body, T config) {
         body.resolveStrategy = Closure.OWNER_FIRST
         body.delegate = config
@@ -27,12 +34,12 @@ class ConfigurationHelper {
     }
 
 
-    static List calculateProperties(List providedProperties) {
+    List calculateProperties(List providedProperties) {
         List props = providedProperties ?: []
 
         int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarder}
 
-        print("Index: ${index}")
+        scope.sh "Index: ${index}"
 
         return props
     }

@@ -17,10 +17,11 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 
 def call(String organization, Closure body) {
     echo "organization: ${organization}"
+    ConfigurationHelper helper = new ConfigurationHelper(this)
 
     DockerPipelineConfiguration config = ConfigurationHelper.configure(body, new DockerPipelineConfiguration())
 
-    List props = ConfigurationHelper.calculateProperties(config.jobProperties)
+    List props = helper.calculateProperties(config.jobProperties)
 
     props.each {it ->
         echo "${it.getSymbol()}"
