@@ -31,6 +31,6 @@ def call(String organization, Closure body) {
 
         echo """\
         Properties: ${props}
-        """.trimIndent()
+        """.stripIndent()
     }
 }
