@@ -87,7 +87,7 @@ def call(String githubOrganization, Closure body) {
 
                     stage('Tag docker image') {
                         tags.each { tag ->
-                            image.tag(dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag))
+                            image.tag(tag)
                         }
                     }
 
@@ -97,7 +97,7 @@ def call(String githubOrganization, Closure body) {
                                 sh "set -x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
                                 tags.each { tag ->
-                                    image.push(dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag))
+                                    image.push(tag)
                                 }
                             }
                         }
