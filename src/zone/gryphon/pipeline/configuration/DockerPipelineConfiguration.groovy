@@ -15,9 +15,6 @@
 
 package zone.gryphon.pipeline.configuration
 
-import groovy.transform.ToString
-
-@ToString
 class DockerPipelineConfiguration {
 
     String organization = 'unset'
