@@ -16,30 +16,28 @@
 package zone.gryphon.pipeline.configuration
 
 
+def <T> T configure(Closure body, T config) {
+    body.resolveStrategy = Closure.OWNER_FIRST
+    body.delegate = config
+    body()
+    return config
+}
 
 
-    def <T> T configure(Closure body, T config) {
-        body.resolveStrategy = Closure.OWNER_FIRST
-        body.delegate = config
-        body()
-        return config
+List calculateProperties(List providedProperties) {
+    List props = []
+
+    if (providedProperties) {
+        props.addAll(providedProperties)
     }
 
+    int index = props.findIndexOf { it -> it.getSymbol() == 'buildDiscarder' }
 
-    List calculateProperties(List providedProperties) {
-        List props = []
-
-        if (providedProperties) {
-            props.addAll(providedProperties)
-        }
-
-        int index = props.findIndexOf {it -> it.getSymbol() == 'buildDiscarder'}
-
-        // no build discarder, install default
-        if (index < 0) {
-            props.add(buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '90', numToKeepStr: '100')))
-        }
-
-        return props
+    // no build discarder, install default
+    if (index < 0) {
+        props.add(buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '90', numToKeepStr: '100')))
     }
+
+    return props
+}
 

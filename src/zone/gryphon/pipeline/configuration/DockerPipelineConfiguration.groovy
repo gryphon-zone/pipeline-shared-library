@@ -17,6 +17,8 @@ package zone.gryphon.pipeline.configuration
 
 class DockerPipelineConfiguration {
 
+    String deployableBranchRegex = 'master'
+
     /**
      * Custom job properties
      */

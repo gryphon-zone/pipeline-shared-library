@@ -18,17 +18,15 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 def call(String organization, Closure body) {
     echo "organization: ${organization}"
 
-    node('jnlp-slave') {
-        ConfigurationHelper helper = new ConfigurationHelper();
+    ConfigurationHelper helper = new ConfigurationHelper()
 
-        DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+    DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
 
-        List props = helper.calculateProperties(config.jobProperties)
+    List props = helper.calculateProperties(config.jobProperties)
 
-        props.each { asdf ->
-            echo "${asdf.getSymbol()}"
-        }
-
-        properties(props)
+    props.each { asdf ->
+        echo "${asdf.getSymbol()}"
     }
+
+    properties(props)
 }
