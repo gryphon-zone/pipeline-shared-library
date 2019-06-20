@@ -17,13 +17,7 @@ package zone.gryphon.pipeline.configuration
 
 class ConfigurationHelper {
 
-    static String buildDiscarder = 'buildDiscarder'
-
-    Object scope
-
-    ConfigurationHelper(Object scope) {
-        this.scope = scope
-    }
+    static final String buildDiscarderName = 'buildDiscarder'
 
 
     static <T> T configure(Closure body, T config) {
@@ -34,12 +28,19 @@ class ConfigurationHelper {
     }
 
 
-    List calculateProperties(List providedProperties) {
-        List props = providedProperties ?: []
+    static List calculateProperties(List providedProperties) {
+        List props = []
 
-        int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarder}
+        if (providedProperties) {
+            props.addAll(providedProperties)
+        }
 
-        scope.echo "Index: ${index}"
+        int index = props.findIndexOf {it -> it.getSymbol() == buildDiscarderName}
+
+        // no build discarder, install default
+        if (index < 0) {
+            props.add(buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '90', numToKeepStr: '100')))
+        }
 
         return props
     }
