@@ -29,10 +29,14 @@ def call(String githubOrganization, Closure body) {
 
         final DockerUtilities dockerUtilities = new DockerUtilities()
         final ConfigurationHelper helper = new ConfigurationHelper()
+        final JobInformation info = util.getJobInformation()
 
         CheckoutInformation checkoutInformation
         DockerPipelineConfiguration config
         List calculatedJobProperties
+        String dockerOrganization
+        String artifact
+        boolean deployable
         def image
 
         // no build is allowed to run for more than 60 minutes
@@ -42,6 +46,11 @@ def call(String githubOrganization, Closure body) {
 
                 stage('Parse Configuration') {
                     config = helper.configure(body, new DockerPipelineConfiguration())
+
+                    // branch is deployable if it matches the regex AND it's not from a fork
+                    deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
+                    dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+                    artifact = config.dockerArtifact ?: info.repository
 
                     calculatedJobProperties = helper.calculateProperties(config.jobProperties)
 
@@ -61,36 +70,43 @@ def call(String githubOrganization, Closure body) {
                                         checkoutInformation = util.checkoutProject()
                                     }
 
-                                    JobInformation info = util.getJobInformation()
-
-                                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
-
-                                    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
-                                    String artifact = config.dockerArtifact ?: info.repository
-
                                     String shortHash = checkoutInformation.gitCommit.substring(0, 7)
-                                    String versionTagBase = config.version ? ("${config.version}.${info.build}-") : ""
-                                    String versionTag = "${versionTagBase}${shortHash}"
+
                                     String branchTag = "${info.branch}-${shortHash}"
 
-                                    List tags = [branchTag, versionTag]
+                                    List tags = []
 
                                     if (deployable) {
-                                        tags.add('latest')
+                                        tags.add("latest")
+
+                                        // if there's a version defined in the config, generate a "version.build-hash"
+                                        // tag for the image. This will typically look like 1.2.3-abcdef;
+                                        // otherwise, use the branch tag.
+                                        // This is to ensure we always have a unique tag for each image, since the
+                                        // "latest" tag will be overwritten by subsequent builds.
+                                        if (config.version) {
+                                            tags.add("${config.version}.${info.build}-${shortHash}")
+                                        } else {
+                                            tags.add(branchTag)
+                                        }
+                                    } else {
+                                        // non-deployable branches always get tagged with the branch name,
+                                        // so it's obvious where they came from
+                                        tags.add(branchTag)
                                     }
 
                                     echo """\
                                     Github Organization: ${githubOrganization}
-                                    Docker Organization: ${dockerOrganization}
-                                    Docker Artifact: ${artifact}
-                                    Docker Tags: ${tags}
-                                    Properties: ${calculatedJobProperties}
+                                    Dockerhub Organization: ${dockerOrganization}
+                                    Dockerhub Repository: ${artifact}
+                                    Docker Image Tags: ${tags}
+                                    Job Properties: ${calculatedJobProperties}
                                     """.stripIndent()
 
-                                    String initialTag = Util.entropy()
+                                    String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
-                                    stage ('Build Docker Image') {
-                                        image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
+                                    stage('Build Docker Image') {
+                                        image = docker.build(buildTag, "--pull --progress 'plain' .")
                                     }
 
                                     stage('Tag docker image') {
@@ -110,9 +126,17 @@ def call(String githubOrganization, Closure body) {
                                                 tags.each { tag ->
                                                     image.push(tag)
                                                 }
+
+                                                sh """
+                                                   { set +x; } 2> /dev/null && \
+                                                   docker logout
+                                                   """
                                             }
                                         }
                                     }
+
+                                    sh "docker rmi ${buildTag}"
+
                                 } finally {
                                     cleanWs(notFailBuild: true)
                                 }
