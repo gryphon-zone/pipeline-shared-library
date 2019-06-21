@@ -120,7 +120,7 @@ def call(String githubOrganization, Closure body) {
                                         String id = sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")
 
                                         String regex = String.join('|', tags)
-                                        sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY|${id}\\w+\\)' | grep -E '\\(^REPOSITORY|${regex}\\w+\\)'"
+                                        sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY\\w+|${id}\\)' | grep -E '\\(^REPOSITORY\\w+|${regex}\\)'"
                                     }
 
 
