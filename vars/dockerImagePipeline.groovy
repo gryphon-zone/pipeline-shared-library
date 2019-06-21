@@ -101,11 +101,14 @@ def call(String githubOrganization, Closure body) {
                                     }
 
                                     echo """\
+                                    ${'#' * 80}
+                                    Calculated Configuration:
                                     Github Organization: ${githubOrganization}
                                     Dockerhub Organization: ${dockerOrganization}
                                     Dockerhub Repository: ${artifact}
                                     Docker Image Tags: ${tags}
                                     Job Properties: ${calculatedJobProperties}
+                                    ${'#' * 80}
                                     """.stripIndent()
 
                                     String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
