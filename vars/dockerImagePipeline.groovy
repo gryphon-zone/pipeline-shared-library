@@ -117,6 +117,19 @@ def call(String githubOrganization, Closure body) {
                                         sh "docker images ${buildTag}"
                                     }
 
+                                    stage('Print Docker Image Information') {
+                                        List lines = []
+                                        lines.add(sh(returnStdout: true, script: 'docker images | head -n 1'))
+
+                                        tags.each {tag ->
+                                            lines.add(sh(returnStdout: true, script: "docker images ${dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag)} | tail -n 1"))
+                                        }
+
+                                        echo String.join("\n", lines)
+
+                                    }
+
+
                                     if (deployable) {
                                         stage('Push Docker image') {
                                             withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
