@@ -119,7 +119,7 @@ def call(String githubOrganization, Closure body) {
                                     stage('Print Docker Image Information') {
                                         String id = sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")
 
-                                        sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '\\(${id}|^REPOSITORY\\w+\\)'"
+                                        sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY|${id}\\w+\\)' | grep -E '\\\\(^REPOSITORY|${String.join('|', tags)}\\\\w+\\\\)'"
                                     }
 
 
