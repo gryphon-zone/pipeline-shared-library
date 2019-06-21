@@ -119,17 +119,7 @@ def call(String githubOrganization, Closure body) {
                                     stage('Print Docker Image Information') {
                                         String id = sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")
 
-                                        echo "id: ${id}"
-
-                                        List lines = []
-                                        lines.add(sh(returnStdout: true, script: "${silence} docker images | head -n 1"))
-
-                                        tags.each {tag ->
-                                            lines.add(sh(returnStdout: true, script: "${silence} docker images ${dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag)} | tail -n 1"))
-                                        }
-
-                                        echo String.join("\n", lines).replace('\n\n', '\n')
-
+                                        sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '(${id}|^REPOSITORY\\w+)"
                                     }
 
 
