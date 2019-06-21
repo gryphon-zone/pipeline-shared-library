@@ -27,6 +27,7 @@ def call(String githubOrganization, Closure body) {
 
     util.withTimestamps {
 
+        final String silence = '{ set +x; } 2> /dev/null &&'
         final DockerUtilities dockerUtilities = new DockerUtilities()
         final ConfigurationHelper helper = new ConfigurationHelper()
         final JobInformation info = util.getJobInformation()
@@ -119,13 +120,13 @@ def call(String githubOrganization, Closure body) {
 
                                     stage('Print Docker Image Information') {
                                         List lines = []
-                                        lines.add(sh(returnStdout: true, script: 'docker images | head -n 1'))
+                                        lines.add(sh(returnStdout: true, script: "${silence} docker images | head -n 1"))
 
                                         tags.each {tag ->
-                                            lines.add(sh(returnStdout: true, script: "docker images ${dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag)} | tail -n 1"))
+                                            lines.add(sh(returnStdout: true, script: "${silence} docker images ${dockerUtilities.coordinatesFor(dockerOrganization, artifact, tag)} | tail -n 1"))
                                         }
 
-                                        echo String.join("\n", lines)
+                                        echo String.join("\n", lines).replace('\n\n', '\n')
 
                                     }
 
@@ -133,24 +134,19 @@ def call(String githubOrganization, Closure body) {
                                     if (deployable) {
                                         stage('Push Docker image') {
                                             withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                                sh """
-                                                   { set +x; } 2> /dev/null && \
-                                                   echo \"${password}\" | docker login -u \"${username}\" --password-stdin
-                                                   """
+                                                sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+
 
                                                 tags.each { tag ->
                                                     image.push(tag)
                                                 }
 
-                                                sh """
-                                                   { set +x; } 2> /dev/null && \
-                                                   docker logout
-                                                   """
+                                                sh "${silence} docker logout"
                                             }
                                         }
                                     }
 
-                                    sh "docker rmi ${buildTag}"
+                                    sh "${silence} docker rmi ${buildTag}"
 
                                 } finally {
                                     cleanWs(notFailBuild: true)
