@@ -22,7 +22,7 @@ import zone.gryphon.pipeline.toolbox.Util
 
 def call(String githubOrganization, Closure body) {
 
-    // only instantiation of `Util` object should happen outside of timestamps block
+    // only call outside of timestamp block is creation of util object
     final Util util = new Util()
 
     util.withTimestamps {
@@ -33,71 +33,82 @@ def call(String githubOrganization, Closure body) {
         CheckoutInformation checkoutInformation
         DockerPipelineConfiguration config
         List calculatedJobProperties
-        List tags
 
-        stage('Parse Configuration') {
-            config = helper.configure(body, new DockerPipelineConfiguration())
+        // no build is allowed to run for more than 60 minutes
+        util.withAbsoluteTimeout(60) {
 
-            calculatedJobProperties = helper.calculateProperties(config.jobProperties)
+            util.withColor {
 
-            // set job properties
-            //noinspection GroovyAssignabilityCheck
-            properties(calculatedJobProperties)
-        }
+                stage('Parse Configuration') {
+                    config = helper.configure(body, new DockerPipelineConfiguration())
 
-        stage('Await Executor') {
-            node('docker-cli') {
-                util.withRandomWorkspace {
+                    calculatedJobProperties = helper.calculateProperties(config.jobProperties)
 
-                    stage('Checkout Project') {
-                        checkoutInformation = util.checkoutProject()
-                    }
+                    // set job properties
+                    //noinspection GroovyAssignabilityCheck
+                    properties(calculatedJobProperties)
+                }
 
-                    JobInformation info = util.getJobInformation()
+                // kill build if it goes longer than a given number of minutes without logging anything
+                util.withTimeout(config.timeoutMinutes) {
+                    stage('Await Executor') {
+                        node(config.nodeType) {
+                            util.withRandomWorkspace {
+                                try {
 
-                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
+                                    stage('Checkout Project') {
+                                        checkoutInformation = util.checkoutProject()
+                                    }
 
-                    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
-                    String artifact = config.dockerArtifact ?: info.repository
+                                    JobInformation info = util.getJobInformation()
 
-                    String shortHash = checkoutInformation.gitCommit.substring(0, 7)
-                    String versionTagBase = config.version ? ("${config.version}.${info.build}-") : ""
-                    String versionTag = "${versionTagBase}${shortHash}"
-                    String branchTag = "${info.branch}-${shortHash}"
+                                    boolean deployable = info.branch.matches(config.deployableBranchRegex)
 
-                    tags = [branchTag, versionTag]
+                                    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+                                    String artifact = config.dockerArtifact ?: info.repository
 
-                    if (deployable) {
-                        tags.add('latest')
-                    }
+                                    String shortHash = checkoutInformation.gitCommit.substring(0, 7)
+                                    String versionTagBase = config.version ? ("${config.version}.${info.build}-") : ""
+                                    String versionTag = "${versionTagBase}${shortHash}"
+                                    String branchTag = "${info.branch}-${shortHash}"
 
-                    String dockerArtifact = "${dockerOrganization}/${artifact}"
+                                    List tags = [branchTag, versionTag]
 
-                    echo """\
-                    Github Organization: ${githubOrganization}
-                    Docker Organization: ${dockerOrganization}
-                    Docker Artifact: ${artifact}
-                    Docker Tags: ${tags}
-                    Properties: ${calculatedJobProperties}
-                    """.stripIndent()
+                                    if (deployable) {
+                                        tags.add('latest')
+                                    }
 
-                    String initialTag = Util.entropy()
+                                    echo """\
+                                    Github Organization: ${githubOrganization}
+                                    Docker Organization: ${dockerOrganization}
+                                    Docker Artifact: ${artifact}
+                                    Docker Tags: ${tags}
+                                    Properties: ${calculatedJobProperties}
+                                    """.stripIndent()
 
-                    def image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
+                                    String initialTag = Util.entropy()
 
-                    stage('Tag docker image') {
-                        tags.each { tag ->
-                            image.tag(tag)
-                        }
-                    }
+                                    def image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
 
-                    if (deployable) {
-                        stage('Push Docker image') {
-                            withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                sh "set +x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+                                    stage('Tag docker image') {
+                                        tags.each { tag ->
+                                            image.tag(tag)
+                                        }
+                                    }
 
-                                tags.each { tag ->
-                                    image.push(tag)
+                                    if (deployable) {
+                                        stage('Push Docker image') {
+                                            withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                                sh "set +x && echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+
+                                                tags.each { tag ->
+                                                    image.push(tag)
+                                                }
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    cleanWs(notFailBuild: true)
                                 }
                             }
                         }

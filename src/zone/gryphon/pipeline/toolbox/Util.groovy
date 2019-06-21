@@ -24,6 +24,24 @@ def withTimestamps(Closure body) {
     }
 }
 
+def withColor(String color = 'xterm', Closure body) {
+    ansiColor(color) {
+        body()
+    }
+}
+
+def withAbsoluteTimeout(minutes = 60, Closure body) {
+    timeout(time: minutes) {
+        body()
+    }
+}
+
+def withTimeout(minutes = 10, Closure body) {
+    timeout(activity: true, time: minutes) {
+        body()
+    }
+}
+
 static String entropy() {
     return UUID.randomUUID().toString().replace("-", "")
 }

@@ -17,9 +17,24 @@ package zone.gryphon.pipeline.model
 
 class JobInformation {
 
+    /**
+     * Organization project belongs to
+     */
     String organization
+
+    /**
+     * Name of repository/project name
+     */
     String repository
+
+    /**
+     * Branch being built
+     */
     String branch
+
+    /**
+     * ID of build being run
+     */
     int build
 
     String toString() {

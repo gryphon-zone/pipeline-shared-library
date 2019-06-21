@@ -17,6 +17,13 @@ package zone.gryphon.pipeline.configuration
 
 class DockerPipelineConfiguration {
 
+    /**
+     * Build timeout in minutes; if there's no activity in the logs for this duration of time the build is killed
+     */
+    int timeoutMinutes = 5
+
+    String nodeType = 'docker'
+
     String deployableBranchRegex = 'master'
 
     /**
