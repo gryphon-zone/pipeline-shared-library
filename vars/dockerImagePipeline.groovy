@@ -126,7 +126,7 @@ def call(String githubOrganization, Closure body) {
 
                                     stage('Print Docker Image Information') {
                                         String strings = String.join('|', tags.collect {tag -> Pattern.quote("${tag}") })
-                                        String imageData = sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")
+                                        String imageData = (sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")).trim()
                                         echo "Built the following images:\n${imageData}"
                                     }
 
@@ -134,14 +134,17 @@ def call(String githubOrganization, Closure body) {
                                     if (deployable) {
                                         stage('Push Docker image') {
                                             withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                                sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+                                                try {
+                                                    sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
 
-                                                tags.each { tag ->
-                                                    dockerImage.push(tag)
+                                                    tags.each { tag ->
+                                                        dockerImage.push(tag)
+                                                    }
+
+                                                } finally {
+                                                    sh "${silence} docker logout"
                                                 }
-
-                                                sh "${silence} docker logout"
                                             }
                                         }
                                     }
