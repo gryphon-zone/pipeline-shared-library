@@ -123,7 +123,7 @@ def call(String githubOrganization, Closure body) {
 
                                         String strings = String.join(' ', tags.collect {tag -> "-F '${tag}'" })
                                         echo strings
-                                        sh "docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY\\w+|${id}\\)' | grep -F 'REPOSITORY' ${strings}'"
+                                        sh "docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY\\w+|${id}\\)' | grep -F 'REPOSITORY' ${strings}"
                                     }
 
 
