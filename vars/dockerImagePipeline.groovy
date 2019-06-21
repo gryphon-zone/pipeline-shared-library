@@ -113,6 +113,8 @@ def call(String githubOrganization, Closure body) {
                                         tags.each { tag ->
                                             image.tag(tag)
                                         }
+
+                                        sh "docker images ${buildTag}"
                                     }
 
                                     if (deployable) {
