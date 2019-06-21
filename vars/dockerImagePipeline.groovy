@@ -91,7 +91,7 @@ def call(String githubOrganization, Closure body) {
 
                                     stage ('Build Docker Image') {
                                         image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
-                                    }|
+                                    }
 
                                     stage('Tag docker image') {
                                         tags.each { tag ->
