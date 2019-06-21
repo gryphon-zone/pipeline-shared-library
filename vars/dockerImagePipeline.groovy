@@ -114,11 +114,13 @@ def call(String githubOrganization, Closure body) {
                                         tags.each { tag ->
                                             image.tag(tag)
                                         }
-
-                                        sh "docker images ${buildTag}"
                                     }
 
                                     stage('Print Docker Image Information') {
+                                        String id = sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")
+
+                                        echo "id: ${id}"
+
                                         List lines = []
                                         lines.add(sh(returnStdout: true, script: "${silence} docker images | head -n 1"))
 
