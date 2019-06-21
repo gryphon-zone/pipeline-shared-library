@@ -40,7 +40,9 @@ def call(String githubOrganization, Closure body) {
         String dockerOrganization
         String artifact
         boolean deployable
-        def image
+
+        def dockerImage
+        String dockerImageId
 
         // no build is allowed to run for more than 60 minutes
         util.withAbsoluteTimeout(60) {
@@ -109,21 +111,20 @@ def call(String githubOrganization, Closure body) {
                                     String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
                                     stage('Build Docker Image') {
-                                        image = docker.build(buildTag, "--pull --progress 'plain' .")
+                                        dockerImage = docker.build(buildTag, "--pull --progress 'plain' .")
+                                        dockerImageId = (sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")).trim()
                                     }
 
                                     stage('Tag docker image') {
                                         tags.each { tag ->
-                                            image.tag(tag)
+                                            dockerImage.tag(tag)
                                         }
                                     }
 
                                     stage('Print Docker Image Information') {
-                                        String id = (sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")).trim()
-
                                         String strings = String.join('|', tags.collect {tag -> Pattern.quote("${tag}") })
-                                        String imageData = sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${id}' | grep -P '(^REPOSITORY\\s+|${strings})'")
-                                        echo """Built the following images:\n${imageData}"""
+                                        String imageData = sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")
+                                        echo "Built the following images:\n${imageData}"
                                     }
 
 
@@ -134,7 +135,7 @@ def call(String githubOrganization, Closure body) {
 
 
                                                 tags.each { tag ->
-                                                    image.push(tag)
+                                                    dockerImage.push(tag)
                                                 }
 
                                                 sh "${silence} docker logout"
