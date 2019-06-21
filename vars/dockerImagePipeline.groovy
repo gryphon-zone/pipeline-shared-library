@@ -20,6 +20,8 @@ import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
 
+import java.util.regex.Pattern
+
 def call(String githubOrganization, Closure body) {
 
     // only call outside of timestamp block is creation of util object
@@ -119,7 +121,8 @@ def call(String githubOrganization, Closure body) {
                                     stage('Print Docker Image Information') {
                                         String id = sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")
 
-                                        String regex = String.join('|', tags)
+                                        String regex = String.join('|', tags.collect {tag -> Pattern.quote(tag) })
+                                        echo regex
                                         sh "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E '\\(^REPOSITORY\\w+|${id}\\)' | grep -E '\\(^REPOSITORY\\w+|${regex}\\)'"
                                     }
 
