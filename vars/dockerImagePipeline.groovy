@@ -33,6 +33,7 @@ def call(String githubOrganization, Closure body) {
         CheckoutInformation checkoutInformation
         DockerPipelineConfiguration config
         List calculatedJobProperties
+        def image
 
         // no build is allowed to run for more than 60 minutes
         util.withAbsoluteTimeout(60) {
@@ -88,7 +89,9 @@ def call(String githubOrganization, Closure body) {
 
                                     String initialTag = Util.entropy()
 
-                                    def image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
+                                    stage ('Build Docker Image') {
+                                        image = docker.build(dockerUtilities.coordinatesFor(dockerOrganization, artifact, initialTag), "--pull --progress 'plain' .")
+                                    }|
 
                                     stage('Tag docker image') {
                                         tags.each { tag ->
