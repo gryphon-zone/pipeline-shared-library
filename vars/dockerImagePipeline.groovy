@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
-
 
 import java.util.regex.Pattern
 
@@ -34,6 +34,7 @@ def call(String githubOrganization, Closure body) {
         final DockerUtilities dockerUtilities = new DockerUtilities()
         final ConfigurationHelper helper = new ConfigurationHelper()
         final JobInformation info = util.getJobInformation()
+        boolean wasTriggerByScm = util.buildWasTriggerByCommit()
 
         CheckoutInformation checkoutInformation
         DockerPipelineConfiguration config
@@ -42,15 +43,14 @@ def call(String githubOrganization, Closure body) {
         String artifact
         boolean deployable
 
+        String buildArgs
+        String buildContext
+
         def dockerImage
         String dockerImageId
 
         // no build is allowed to run for more than 60 minutes
         util.withAbsoluteTimeout(60) {
-
-            boolean triggered = util.buildWasTriggerByCommit()
-
-            echo "triggered by SCM commit: ${triggered}"
 
             util.withColor {
 
@@ -62,17 +62,41 @@ def call(String githubOrganization, Closure body) {
                     dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     artifact = config.dockerArtifact ?: info.repository
 
-                    Object params = parameters([
-                            string(defaultValue: '--pull --progress \'plain\'', description: 'Arguments to pass to the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command', name: 'buildArgs', trim: true),
-                            string(defaultValue: '.', description: 'Build context to use fr the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command', name: 'buildContext', trim: true)
+                    Object paramDefinitions = parameters([
+                            string(
+                                    defaultValue: config.buildArgs,
+                                    description: 'Arguments to pass to the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command',
+                                    name: 'buildArgs',
+                                    trim: true
+                            ),
+                            string(
+                                    defaultValue: config.buildContext,
+                                    description: 'Build context to use for the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command',
+                                    name: 'buildContext',
+                                    trim: true
+                            )
                     ])
 
-                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, params)
+                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, paramDefinitions)
 
                     // set job properties
                     //noinspection GroovyAssignabilityCheck
                     properties(calculatedJobProperties)
+
+                    if (wasTriggerByScm) {
+                        // SCM change triggered build, use the parameter definitions from the configuration
+                        buildArgs = config.buildArgs
+                        buildContext = config.buildContext
+                    } else {
+                        // manual build, use the values passed in the parameters
+                        buildArgs = "${params.buildArgs}"
+                        buildContext = "${params.buildContext}"
+                    }
                 }
+
+                echo "buildArgs: ${buildArgs}, buildContext: ${buildContext}"
+
+                error("buildArgs: ${buildArgs}, buildContext: ${buildContext}")
 
                 // kill build if it goes longer than a given number of minutes without logging anything
                 util.withTimeout(config.timeoutMinutes) {
@@ -135,7 +159,7 @@ def call(String githubOrganization, Closure body) {
                                     }
 
                                     stage('Print Docker Image Information') {
-                                        String strings = String.join('|', tags.collect {tag -> Pattern.quote("${tag}") })
+                                        String strings = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
                                         String imageData = (sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")).trim()
                                         echo "Built the following images:\n${imageData}"
                                     }

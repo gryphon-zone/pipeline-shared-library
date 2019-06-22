@@ -22,6 +22,10 @@ class DockerPipelineConfiguration {
      */
     int timeoutMinutes = 5
 
+    String buildArgs = '--pull --progress \'plain\''
+
+    String buildContext = '.'
+
     String nodeType = 'docker'
 
     String deployableBranchRegex = 'master'
