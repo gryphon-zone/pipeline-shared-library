@@ -19,6 +19,7 @@ import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
+import hudson.triggers.SCMTrigger.SCMTriggerCause
 
 import java.util.regex.Pattern
 
@@ -53,6 +54,15 @@ def call(String githubOrganization, Closure body) {
 
                 echo "${c['_class']}"
                 echo "${c['_class'].getClass().getSimpleName()}"
+
+                echo "asdf: ${SCMTriggerCause.class}"
+                echo "asdf: ${SCMTriggerCause.class.getSimpleName()}"
+
+                boolean isScm = "${c['_class']}".endsWith('SCMTrigger.SCMTriggerCause')
+
+                echo "isScm: ${isScm}"
+
+                echo "\n\n\n"
 
             }
 
