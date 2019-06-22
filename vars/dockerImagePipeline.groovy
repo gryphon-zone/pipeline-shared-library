@@ -47,7 +47,7 @@ def call(String githubOrganization, Closure body) {
         // no build is allowed to run for more than 60 minutes
         util.withAbsoluteTimeout(60) {
 
-            echo "${currentBuild.getBuildCauses}"
+            echo "${currentBuild.getBuildCauses()}"
 
             util.withColor {
 
