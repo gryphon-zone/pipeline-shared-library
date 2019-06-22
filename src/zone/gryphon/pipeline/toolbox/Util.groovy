@@ -56,7 +56,7 @@ def withRandomWorkspace(Closure body) {
 boolean buildWasTriggerByCommit() {
     return currentBuild.getBuildCauses().any { cause ->
         echo "${cause}"
-        return Objects.equals(cause['_class'], SCMTriggerCause.class.name())
+        return cause['_class'] == SCMTriggerCause.class.name()
     }
 }
 
