@@ -73,10 +73,7 @@ boolean buildWasTriggerByCommit() {
         boolean matches = classCauses.contains("${cause['_class']}") || descriptionCauses.any {
             normalized.contains("${it}")
         }
-
-        echo "Raw cause: ${cause}. Commit trigger: ${matches}"
-
-
+//        echo "Raw cause: ${cause}. Commit trigger: ${matches}"
         return matches
     }
 }

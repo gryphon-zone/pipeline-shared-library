@@ -24,8 +24,10 @@ def <T> T configure(Closure body, T config) {
 }
 
 
-List calculateProperties(List providedProperties) {
+List calculateProperties(List providedProperties, Object... additionalProps) {
     List props = []
+
+    props.addAll(additionalProps)
 
     if (providedProperties) {
         props.addAll(providedProperties)

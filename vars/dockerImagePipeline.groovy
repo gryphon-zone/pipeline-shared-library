@@ -62,7 +62,12 @@ def call(String githubOrganization, Closure body) {
                     dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     artifact = config.dockerArtifact ?: info.repository
 
-                    calculatedJobProperties = helper.calculateProperties(config.jobProperties)
+                    Object params = parameters([
+                            string(defaultValue: '--pull --progress \'plain\'', description: 'Arguments to pass to the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command', name: 'buildArgs', trim: true),
+                            string(defaultValue: '.', description: 'Build context to use fr the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command', name: 'buildContext', trim: true)
+                    ])
+
+                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, params)
 
                     // set job properties
                     //noinspection GroovyAssignabilityCheck
