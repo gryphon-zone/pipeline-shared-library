@@ -19,7 +19,7 @@ import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtilities
 import zone.gryphon.pipeline.toolbox.Util
-import hudson.triggers.SCMTrigger.SCMTriggerCause
+
 
 import java.util.regex.Pattern
 
@@ -48,23 +48,9 @@ def call(String githubOrganization, Closure body) {
         // no build is allowed to run for more than 60 minutes
         util.withAbsoluteTimeout(60) {
 
-            currentBuild.getBuildCauses().each{c ->
-                echo "${c}"
-                echo "${c.getClass().getSimpleName()}"
+            boolean triggered = util.buildWasTriggerByCommit()
 
-                echo "${c['_class']}"
-                echo "${c['_class'].getClass().getSimpleName()}"
-
-                echo "asdf: ${SCMTriggerCause.class}"
-                echo "asdf: ${SCMTriggerCause.class.getSimpleName()}"
-
-                boolean isScm = "${c['_class']}".endsWith('SCMTrigger.SCMTriggerCause')
-
-                echo "isScm: ${isScm}"
-
-                echo "\n\n\n"
-
-            }
+            echo "triggered by SCM commit: ${triggered}"
 
             util.withColor {
 

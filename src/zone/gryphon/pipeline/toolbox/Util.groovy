@@ -17,6 +17,7 @@ package zone.gryphon.pipeline.toolbox
 
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
+import hudson.triggers.SCMTrigger.SCMTriggerCause
 
 def withTimestamps(Closure body) {
     timestamps {
@@ -49,6 +50,13 @@ static String entropy() {
 def withRandomWorkspace(Closure body) {
     ws(entropy()) {
         body()
+    }
+}
+
+boolean buildWasTriggerByCommit() {
+    return currentBuild.getBuildCauses().any { cause ->
+        echo "${cause}"
+        return Objects.equals(cause['_class'], SCMTriggerCause.class.name())
     }
 }
 
