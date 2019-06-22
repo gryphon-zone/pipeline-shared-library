@@ -140,7 +140,7 @@ def call(String githubOrganization, Closure body) {
 
 
                                     currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
-                                    currentBuild.description = "Build for tag${tags.size() == 1 ? '' : 's'} ${String.join(', ', tags)}"
+                                    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
                                     String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
 
