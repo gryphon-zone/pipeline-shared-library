@@ -94,10 +94,6 @@ def call(String githubOrganization, Closure body) {
                     }
                 }
 
-                echo "buildArgs: ${buildArgs}, buildContext: ${buildContext}"
-
-                error("buildArgs: ${buildArgs}, buildContext: ${buildContext}")
-
                 // kill build if it goes longer than a given number of minutes without logging anything
                 util.withTimeout(config.timeoutMinutes) {
                     stage('Await Executor') {
@@ -141,6 +137,8 @@ def call(String githubOrganization, Closure body) {
                                     Dockerhub Organization: ${dockerOrganization}
                                     Dockerhub Repository: ${artifact}
                                     Docker Image Tags: ${tags}
+                                    Docker build arguments: ${buildArgs}
+                                    Docker build context: ${buildContext}
                                     Job Properties: ${calculatedJobProperties}
                                     ${'#' * 80}
                                     """.stripIndent()
@@ -148,7 +146,7 @@ def call(String githubOrganization, Closure body) {
                                     String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
                                     stage('Build Docker Image') {
-                                        dockerImage = docker.build(buildTag, "--pull --progress 'plain' .")
+                                        dockerImage = docker.build(buildTag, "${buildArgs} ${buildContext}")
                                         dockerImageId = (sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")).trim()
                                     }
 
