@@ -139,7 +139,7 @@ def call(String githubOrganization, Closure body) {
                                     Docker Image Tags: ${tags}
                                     Docker build arguments: ${buildArgs}
                                     Docker build context: ${buildContext}
-                                    Job Properties: ${calculatedJobProperties}
+                                    Job Properties: ${calculatedJobProperties.collect{ prop -> "\t${prop}\n"}}
                                     ${'#' * 80}
                                     """.stripIndent()
 
