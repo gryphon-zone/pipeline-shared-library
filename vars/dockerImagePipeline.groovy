@@ -65,13 +65,13 @@ def call(String githubOrganization, Closure body) {
                     Object paramDefinitions = parameters([
                             string(
                                     defaultValue: config.buildArgs,
-                                    description: 'Arguments to pass to the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command',
+                                    description: 'Arguments to pass to the "docker build" command',
                                     name: 'buildArgs',
                                     trim: true
                             ),
                             string(
                                     defaultValue: config.buildContext,
-                                    description: 'Build context to use for the <a href="https://docs.docker.com/engine/reference/commandline/build/">docker build</a> command',
+                                    description: 'Build context to use for the "docker build" command',
                                     name: 'buildContext',
                                     trim: true
                             )
