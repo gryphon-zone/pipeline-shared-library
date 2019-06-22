@@ -26,6 +26,8 @@ class DockerPipelineConfiguration {
 
     String buildContext = '.'
 
+    boolean pushImage = true
+
     String nodeType = 'docker'
 
     String deployableBranchRegex = 'master'

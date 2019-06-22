@@ -45,6 +45,7 @@ def call(String githubOrganization, Closure body) {
 
         String buildArgs
         String buildContext
+        boolean pushImage
 
         def dockerImage
         String dockerImageId
@@ -74,6 +75,11 @@ def call(String githubOrganization, Closure body) {
                                     description: 'Build context to use for the "docker build" command',
                                     name: 'buildContext',
                                     trim: true
+                            ),
+                            booleanParam(
+                                    defaultValue: true,
+                                    description: 'Whether or not to push the built Docker image',
+                                    name: 'pushImage'
                             )
                     ])
 
@@ -87,10 +93,12 @@ def call(String githubOrganization, Closure body) {
                         // SCM change triggered build, use the parameter definitions from the configuration
                         buildArgs = config.buildArgs
                         buildContext = config.buildContext
+                        pushImage = config.pushImage
                     } else {
                         // manual build, use the values passed in the parameters
                         buildArgs = "${params.buildArgs}"
                         buildContext = "${params.buildContext}"
+                        pushImage = "${params.pushImage}".toBoolean()
                     }
                 }
 
@@ -154,9 +162,13 @@ def call(String githubOrganization, Closure body) {
                                     }
 
                                     stage('Tag docker image') {
+
                                         tags.each { tag ->
                                             dockerImage.tag(tag)
                                         }
+
+                                        // now that the real tags have been added, we can delete the build tag
+                                        sh "${silence} docker rmi ${buildTag}"
                                     }
 
                                     stage('Print Docker Image Information') {
@@ -168,23 +180,27 @@ def call(String githubOrganization, Closure body) {
 
                                     if (deployable) {
                                         stage('Push Docker image') {
-                                            withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                                try {
-                                                    sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+                                            if (pushImage) {
+                                                withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                                    try {
+                                                        sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
 
 
-                                                    tags.each { tag ->
-                                                        dockerImage.push(tag)
+                                                        tags.each { tag ->
+                                                            dockerImage.push(tag)
+                                                        }
+
+                                                    } finally {
+                                                        sh "${silence} docker logout"
                                                     }
-
-                                                } finally {
-                                                    sh "${silence} docker logout"
                                                 }
+                                            } else {
+                                                echo 'Not pushing image, disabled via parameter'
                                             }
                                         }
+                                    } else {
+                                        echo "Not pushing image, branch \"${info.organization}/${info.repository}/${info.branch}\" is not deployable"
                                     }
-
-                                    sh "${silence} docker rmi ${buildTag}"
 
                                 } finally {
                                     cleanWs(notFailBuild: true)
