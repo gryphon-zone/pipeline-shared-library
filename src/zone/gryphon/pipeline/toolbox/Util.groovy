@@ -17,7 +17,8 @@ package zone.gryphon.pipeline.toolbox
 
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
-import hudson.triggers.SCMTrigger.SCMTriggerCause
+import jenkins.branch.BranchEventCause
+import jenkins.branch.BranchIndexingCause
 
 def withTimestamps(Closure body) {
     timestamps {
@@ -54,9 +55,17 @@ def withRandomWorkspace(Closure body) {
 }
 
 boolean buildWasTriggerByCommit() {
+    List classCauses = [BranchIndexingCause.class.getName(), BranchEventCause.class.getName()]
+    List descriptionCauses = ['push event to branch']
+
     return currentBuild.getBuildCauses().any { cause ->
-        echo "${cause}"
-        return cause['_class'] == SCMTriggerCause.class.getName()
+        String normalized = "${cause['shortDescription']}".toLowerCase()
+        boolean matches = classCauses.contains("${cause['_class']}") || descriptionCauses.any { normalized.contains("${it}") }
+
+        echo "Raw cause: ${cause}. Commit trigger: ${matches}"
+
+
+        return matches
     }
 }
 
