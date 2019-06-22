@@ -95,7 +95,7 @@ def call(String githubOrganization, Closure body) {
                                         // This is to ensure we always have a unique tag for each image, since the
                                         // "latest" tag will be overwritten by subsequent builds.
                                         if (config.version) {
-                                            tags.add("${config.version}.${info.build}-${shortHash}")
+                                            tags.add("${config.version}-${shortHash}")
                                         } else {
                                             tags.add(branchTag)
                                         }
