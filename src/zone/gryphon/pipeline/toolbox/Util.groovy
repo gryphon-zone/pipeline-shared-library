@@ -17,8 +17,6 @@ package zone.gryphon.pipeline.toolbox
 
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
-import jenkins.branch.BranchEventCause
-import jenkins.branch.BranchIndexingCause
 
 def withTimestamps(Closure body) {
     timestamps {
@@ -55,12 +53,26 @@ def withRandomWorkspace(Closure body) {
 }
 
 boolean buildWasTriggerByCommit() {
-    List classCauses = [BranchIndexingCause.class.getName(), BranchEventCause.class.getName()]
-    List descriptionCauses = ['push event to branch']
+    List classCauses = [
+            'jenkins.branch.BranchEventCause',
+            'jenkins.branch.BranchIndexingCause',
+            'hudson.triggers.SCMTrigger$SCMTriggerCause',
+            'com.cloudbees.jenkins.GitHubPushCause',
+            'org.jenkinsci.plugins.github.pullrequest.GitHubPRCause',
+            'com.cloudbees.jenkins.plugins.github_pull.GitHubPullRequestCause',
+            'com.cloudbees.jenkins.plugins.BitBucketPushCause',
+            'hudson.plugins.git.GitStatus$CommitHookCause'
+    ]
+
+    List descriptionCauses = [
+            'push event to branch'
+    ]
 
     return currentBuild.getBuildCauses().any { cause ->
         String normalized = "${cause['shortDescription']}".toLowerCase()
-        boolean matches = classCauses.contains("${cause['_class']}") || descriptionCauses.any { normalized.contains("${it}") }
+        boolean matches = classCauses.contains("${cause['_class']}") || descriptionCauses.any {
+            normalized.contains("${it}")
+        }
 
         echo "Raw cause: ${cause}. Commit trigger: ${matches}"
 
