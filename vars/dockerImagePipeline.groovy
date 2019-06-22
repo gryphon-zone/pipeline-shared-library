@@ -120,8 +120,6 @@ def call(String githubOrganization, Closure body) {
                                     List tags = []
 
                                     if (deployable) {
-                                        tags.add("latest")
-
                                         // if there's a version defined in the config, generate a "version.build-hash"
                                         // tag for the image. This will typically look like 1.2.3-abcdef;
                                         // otherwise, use the branch tag.
@@ -132,11 +130,15 @@ def call(String githubOrganization, Closure body) {
                                         } else {
                                             tags.add(branchTag)
                                         }
+
+                                        tags.add("latest")
                                     } else {
                                         // non-deployable branches always get tagged with the branch name,
                                         // so it's obvious where they came from
                                         tags.add(branchTag)
                                     }
+
+                                    currentBuild.displayName = tags[0]
 
                                     String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
 
