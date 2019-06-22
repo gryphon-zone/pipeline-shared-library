@@ -130,6 +130,8 @@ def call(String githubOrganization, Closure body) {
                                         tags.add(branchTag)
                                     }
 
+                                    String propertiesToString = String.join("\n", calculatedJobProperties.collect{ prop -> "\t${prop}"})
+
                                     echo """\
                                     ${'#' * 80}
                                     Calculated Configuration:
@@ -139,7 +141,7 @@ def call(String githubOrganization, Closure body) {
                                     Docker Image Tags: ${tags}
                                     Docker build arguments: ${buildArgs}
                                     Docker build context: ${buildContext}
-                                    Job Properties: ${String.join("\n", calculatedJobProperties.collect{ prop -> "\t${prop}"})}
+                                    Job Properties:\n${propertiesToString}
                                     ${'#' * 80}
                                     """.stripIndent()
 
