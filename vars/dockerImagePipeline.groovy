@@ -130,7 +130,7 @@ def call(String githubOrganization, Closure body) {
                                         tags.add(branchTag)
                                     }
 
-                                    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}" })
+                                    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
 
                                     echo """\
                                     ${'#' * 80}
