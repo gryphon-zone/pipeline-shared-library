@@ -167,8 +167,6 @@ def call(String githubOrganization, Closure body) {
                                             dockerImage.tag(tag)
                                         }
 
-                                        // now that the real tags have been added, we can delete the build tag
-                                        sh "${silence} docker rmi ${buildTag}"
                                     }
 
                                     stage('Print Docker Image Information') {
@@ -201,6 +199,8 @@ def call(String githubOrganization, Closure body) {
                                     } else {
                                         echo "Not pushing image, branch \"${info.organization}/${info.repository}/${info.branch}\" is not deployable"
                                     }
+
+                                    sh "${silence} docker rmi ${buildTag}"
 
                                 } finally {
                                     cleanWs(notFailBuild: true)
