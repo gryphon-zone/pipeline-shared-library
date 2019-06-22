@@ -49,8 +49,11 @@ def call(String githubOrganization, Closure body) {
 
             currentBuild.getBuildCauses().each{c ->
                 echo "${c}"
-                echo "${c['_class']}"
                 echo "${c.getClass().getSimpleName()}"
+
+                echo "${c['_class']}"
+                echo "${c['_class'].getClass().getSimpleName()}"
+
             }
 
             util.withColor {
