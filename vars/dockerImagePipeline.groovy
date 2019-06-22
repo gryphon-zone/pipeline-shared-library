@@ -173,6 +173,8 @@ def call(String githubOrganization, Closure body) {
                                         String strings = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
                                         String imageData = (sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")).trim()
                                         echo "Built the following images:\n${imageData}"
+
+                                        currentBuild.description = "Jenkins build produced the following images:\n${imageData}"
                                     }
 
 
