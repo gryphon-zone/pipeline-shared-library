@@ -143,7 +143,7 @@ def call(String githubOrganization, Closure body) {
                                     Docker build context: ${buildContext}
                                     """
                                             .stripIndent()
-                                            .concat("Job Properties:\n${propertiesToString}")
+                                            .concat("Job Properties:\n${propertiesToString}\n")
                                             .concat('#' * 80)
 
                                     String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
