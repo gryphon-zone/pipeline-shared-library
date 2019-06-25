@@ -18,42 +18,44 @@ import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
-import zone.gryphon.pipeline.toolbox.DockerUtilities
+import zone.gryphon.pipeline.toolbox.DockerUtility
+import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
 
 def call(String githubOrganization, Closure body) {
 
-    // only call outside of timestamp block is creation of util object
-    final Util util = new Util()
+    // only call outside of timestamp block is creation of ScopeUtility,
+    // all other calls in the pipeline should happen inside of the timestamp block
+    final ScopeUtility scope = new ScopeUtility()
 
-    util.withTimestamps {
+    scope.withTimestamps {
 
-        final String silence = '{ set +x; } 2> /dev/null &&'
-        final DockerUtilities dockerUtilities = new DockerUtilities()
-        final ConfigurationHelper helper = new ConfigurationHelper()
-        final JobInformation info = util.getJobInformation()
-        boolean wasTriggerByScm = util.buildWasTriggerByCommit()
+        scope.withColor {
 
-        CheckoutInformation checkoutInformation
-        DockerPipelineConfiguration config
-        List calculatedJobProperties
-        String dockerOrganization
-        String artifact
-        boolean deployable
+            // no build is allowed to run for more than 60 minutes
+            scope.withAbsoluteTimeout(60) {
 
-        String buildArgs
-        String buildContext
-        boolean pushImage
+                final Util util = new Util()
+                final DockerUtility dockerUtilities = new DockerUtility()
+                final ConfigurationHelper helper = new ConfigurationHelper()
+                final JobInformation info = util.getJobInformation()
+                boolean wasTriggerByScm = util.buildWasTriggerByCommit()
 
-        def dockerImage
-        String dockerImageId
+                CheckoutInformation checkoutInformation
+                DockerPipelineConfiguration config
+                List calculatedJobProperties
+                String dockerOrganization
+                String artifact
+                boolean deployable
 
-        // no build is allowed to run for more than 60 minutes
-        util.withAbsoluteTimeout(60) {
+                String buildArgs
+                String buildContext
+                boolean pushImage
 
-            util.withColor {
+                def dockerImage
+                String dockerImageId
 
                 stage('Parse Configuration') {
                     config = helper.configure(body, new DockerPipelineConfiguration())
@@ -63,7 +65,8 @@ def call(String githubOrganization, Closure body) {
                     dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     artifact = config.dockerArtifact ?: info.repository
 
-                    Object paramDefinitions = parameters([
+
+                    List buildParameters = [
                             string(
                                     defaultValue: config.buildArgs,
                                     description: 'Arguments to pass to the "docker build" command',
@@ -75,15 +78,20 @@ def call(String githubOrganization, Closure body) {
                                     description: 'Build context to use for the "docker build" command',
                                     name: 'buildContext',
                                     trim: true
-                            ),
-                            booleanParam(
-                                    defaultValue: true,
-                                    description: 'Whether or not to push the built Docker image',
-                                    name: 'pushImage'
                             )
-                    ])
+                    ]
 
-                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, paramDefinitions)
+                    if (deployable) {
+                        buildParameters.add(
+                                booleanParam(
+                                        defaultValue: true,
+                                        description: 'Whether or not to push the built Docker image',
+                                        name: 'pushImage'
+                                )
+                        )
+                    }
+
+                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
 
                     // set job properties
                     //noinspection GroovyAssignabilityCheck
@@ -103,111 +111,107 @@ def call(String githubOrganization, Closure body) {
                 }
 
                 // kill build if it goes longer than a given number of minutes without logging anything
-                util.withTimeout(config.timeoutMinutes) {
-                    stage('Await Executor') {
-                        node(config.nodeType) {
-                            util.withRandomWorkspace {
-                                try {
+                //noinspection GroovyVariableNotAssigned
+                scope.withTimeout(config.timeoutMinutes) {
+                    scope.withExecutor(config.nodeType) {
 
-                                    stage('Checkout Project') {
-                                        checkoutInformation = util.checkoutProject()
-                                    }
+                        stage('Checkout Project') {
+                            checkoutInformation = util.checkoutProject()
+                        }
 
-                                    String shortHash = checkoutInformation.gitCommit.substring(0, 7)
+                        String shortHash = Util.shortHash(checkoutInformation)
 
-                                    String branchTag = "${info.branch}-${shortHash}"
+                        String branchTag = "${info.branch}-${shortHash}"
 
-                                    List tags = []
+                        List tags = []
 
-                                    if (deployable) {
-                                        // if there's a version defined in the config, generate a "version.build-hash"
-                                        // tag for the image. This will typically look like 1.2.3-abcdef;
-                                        // otherwise, use the branch tag.
-                                        // This is to ensure we always have a unique tag for each image, since the
-                                        // "latest" tag will be overwritten by subsequent builds.
-                                        if (config.version) {
-                                            tags.add("${config.version}-${shortHash}")
-                                        } else {
-                                            tags.add(branchTag)
-                                        }
+                        if (deployable) {
+                            // if there's a version defined in the config, generate a "version.build-hash"
+                            // tag for the image. This will typically look like 1.2.3-abcdef;
+                            // otherwise, use the branch tag.
+                            // This is to ensure we always have a unique tag for each image, since the
+                            // "latest" tag will be overwritten by subsequent builds.
+                            if (config.version) {
+                                tags.add("${config.version}-${shortHash}")
+                            } else {
+                                tags.add(branchTag)
+                            }
 
-                                        tags.add("latest")
-                                    } else {
-                                        // non-deployable branches always get tagged with the branch name,
-                                        // so it's obvious where they came from
-                                        tags.add(branchTag)
-                                    }
+                            tags.add("latest")
+                        } else {
+                            // non-deployable branches always get tagged with the branch name,
+                            // so it's obvious where they came from
+                            tags.add(branchTag)
+                        }
 
 
-                                    currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
-                                    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
+                        currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
+                        currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
-                                    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
+                        String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
 
-                                    echo """\
-                                    ${'#' * 80}
-                                    Calculated Configuration:
-                                    Github Organization: ${githubOrganization}
-                                    Dockerhub Organization: ${dockerOrganization}
-                                    Dockerhub Repository: ${artifact}
-                                    Docker Image Tags: ${tags}
-                                    Docker build arguments: ${buildArgs}
-                                    Docker build context: ${buildContext}
-                                    """.stripIndent().concat("Job Properties:\n${propertiesToString}\n").concat('#' * 80)
+                        echo """\
+                        ${'#' * 120}
+                        ${'#' * 120}
+                        Calculated Configuration:
+                        -------------------------
+                        Github Organization: ${githubOrganization}
+                        Dockerhub Organization: ${dockerOrganization}
+                        Dockerhub Repository: ${artifact}
+                        Docker Image Tags: ${tags}
+                        Docker build arguments: ${buildArgs}
+                        Docker build context: ${buildContext}
+                        """.stripIndent()
+                                .concat("Job Properties:\n${propertiesToString}\n")
+                                .concat('#' * 120).concat('\n')
+                                .concat('#' * 120).concat('\n')
 
-                                    String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
+                        String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
-                                    stage('Build Docker Image') {
-                                        dockerImage = docker.build(buildTag, "${buildArgs} ${buildContext}")
-                                        dockerImageId = (sh(returnStdout: true, script: "${silence} docker images ${buildTag} --format '{{.ID}}' | head -n 1")).trim()
-                                    }
+                        stage('Build Docker Image') {
+                            dockerImage = docker.build(buildTag, "${buildArgs} ${buildContext}")
+                            dockerImageId = util.sh("docker images ${buildTag} --format '{{.ID}}' | head -n 1", quiet: true).trim()
+                        }
 
-                                    stage('Tag docker image') {
+                        stage('Tag docker image') {
 
-                                        tags.each { tag ->
-                                            dockerImage.tag(tag)
-                                        }
+                            tags.each { tag ->
+                                dockerImage.tag(tag)
+                            }
 
-                                    }
+                        }
 
-                                    stage('Print Docker Image Information') {
-                                        String strings = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
-                                        String imageData = (sh(returnStdout: true, script: "${silence} docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'")).trim()
-                                        echo "Built the following images:\n${imageData}"
-                                    }
-
-
-                                    if (deployable) {
-                                        stage('Push Docker image') {
-                                            if (pushImage) {
-                                                withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                                    try {
-                                                        sh "${silence} echo \"${password}\" | docker login -u \"${username}\" --password-stdin"
+                        stage('Print Docker Image Information') {
+                            String strings = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
+                            String imageData = util.sh("docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'", quiet: true).trim()
+                            echo "Built the following images:\n${imageData}"
+                        }
 
 
-                                                        tags.each { tag ->
-                                                            dockerImage.push(tag)
-                                                        }
+                        if (deployable) {
+                            stage('Push Docker image') {
+                                if (pushImage) {
+                                    withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                        try {
+                                            util.sh("echo \"${password}\" | docker login -u \"${username}\" --password-stdin", quiet: true)
 
-                                                    } finally {
-                                                        sh "${silence} docker logout"
-                                                    }
-                                                }
-                                            } else {
-                                                echo 'Not pushing image, disabled via parameter'
+                                            tags.each { tag ->
+                                                dockerImage.push(tag)
                                             }
+
+                                        } finally {
+                                            util.sh("docker logout", quiet: true)
                                         }
-                                    } else {
-                                        echo "Not pushing image, branch \"${info.organization}/${info.repository}/${info.branch}\" is not deployable"
                                     }
-
-                                    sh "${silence} docker rmi ${buildTag}"
-
-                                } finally {
-                                    cleanWs(notFailBuild: true)
+                                } else {
+                                    echo 'Not pushing image, disabled via parameter'
                                 }
                             }
+                        } else {
+                            echo "Not pushing image, branch \"${info.organization}/${info.repository}/${info.branch}\" is not deployable"
                         }
+
+                        util.sh("docker rmi ${buildTag}", quiet: true)
                     }
                 }
             }
