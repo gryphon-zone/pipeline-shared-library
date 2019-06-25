@@ -51,7 +51,7 @@ void withRandomAutoCleaningWorkspace(Closure body) {
 }
 
 void withRandomWorkspace(Closure body) {
-    ws(Util.entropy()) {
+    ws("workspace/${Util.entropy()}") {
         return body()
     }
 }
