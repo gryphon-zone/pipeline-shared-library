@@ -152,8 +152,8 @@ def call(String githubOrganization, Closure body) {
                                 String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
 
                                 echo """\
-                                    ${'#' * 140}
-                                    ${'#' * 140}
+                                    ${'#' * 120}
+                                    ${'#' * 120}
                                     Calculated Configuration:
                                     -------------------------
                                     Github Organization: ${githubOrganization}
@@ -164,8 +164,8 @@ def call(String githubOrganization, Closure body) {
                                     Docker build context: ${buildContext}
                                     """.stripIndent()
                                         .concat("Job Properties:\n${propertiesToString}\n")
-                                        .concat('#' * 140).concat('\n')
-                                        .concat('#' * 140).concat('\n')
+                                        .concat('#' * 120).concat('\n')
+                                        .concat('#' * 120).concat('\n')
 
                                 String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
