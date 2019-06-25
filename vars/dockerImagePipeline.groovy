@@ -65,7 +65,8 @@ def call(String githubOrganization, Closure body) {
                     dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
                     artifact = config.dockerArtifact ?: info.repository
 
-                    Object paramDefinitions = parameters([
+
+                    List buildParameters = [
                             string(
                                     defaultValue: config.buildArgs,
                                     description: 'Arguments to pass to the "docker build" command',
@@ -77,15 +78,20 @@ def call(String githubOrganization, Closure body) {
                                     description: 'Build context to use for the "docker build" command',
                                     name: 'buildContext',
                                     trim: true
-                            ),
-                            booleanParam(
-                                    defaultValue: true,
-                                    description: 'Whether or not to push the built Docker image',
-                                    name: 'pushImage'
                             )
-                    ])
+                    ]
 
-                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, paramDefinitions)
+                    if (deployable) {
+                        buildParameters.add(
+                                booleanParam(
+                                        defaultValue: true,
+                                        description: 'Whether or not to push the built Docker image',
+                                        name: 'pushImage'
+                                )
+                        )
+                    }
+
+                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
 
                     // set job properties
                     //noinspection GroovyAssignabilityCheck
