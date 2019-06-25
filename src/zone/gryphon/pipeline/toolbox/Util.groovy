@@ -15,41 +15,45 @@
 
 package zone.gryphon.pipeline.toolbox
 
+import groovy.transform.Field
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 
-def withTimestamps(Closure body) {
-    timestamps {
-        body()
-    }
-}
-
-def withColor(String color = 'xterm', Closure body) {
-    ansiColor(color) {
-        body()
-    }
-}
-
-def withAbsoluteTimeout(minutes = 60, Closure body) {
-    timeout(time: minutes) {
-        body()
-    }
-}
-
-def withTimeout(minutes = 10, Closure body) {
-    timeout(activity: true, time: minutes) {
-        body()
-    }
-}
+@Field
+final String silence = '{ set +x; } 2> /dev/null ;'
 
 static String entropy() {
     return UUID.randomUUID().toString().replace("-", "")
 }
 
-def withRandomWorkspace(Closure body) {
-    ws(entropy()) {
-        body()
+def sh(Map map = [:], String script) {
+    String label = map['label']
+    boolean quiet = map['quiet'] ?: false
+    String returnType = map['returnType'] ?: 'stdout'
+
+    boolean returnStdout
+    boolean returnStatus
+
+    switch (returnType) {
+        case 'stdout':
+            returnStdout = true
+            returnStatus = false
+            break
+        case 'status':
+            returnStdout = false
+            returnStatus = true
+            break
+        default:
+            throw new IllegalArgumentException("\"returnType\" param must be either \"stdout\" or \"status\", instead got \"${returnType}\"")
     }
+
+    return sh(
+            encoding: 'UTF-8',
+            returnStatus: returnStatus,
+            returnStdout: returnStdout,
+            script: quiet ? "${silence} ${script}" : script,
+            label: label
+    )
 }
 
 boolean buildWasTriggerByCommit() {
