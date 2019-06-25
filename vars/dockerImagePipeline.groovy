@@ -153,14 +153,21 @@ def call(String githubOrganization, Closure body) {
 
                                 echo """\
                                     ${'#' * 80}
+                                    ${'#' * 80}
+                                    ${'#' * 80}
                                     Calculated Configuration:
+                                    -------------------------
                                     Github Organization: ${githubOrganization}
                                     Dockerhub Organization: ${dockerOrganization}
                                     Dockerhub Repository: ${artifact}
                                     Docker Image Tags: ${tags}
                                     Docker build arguments: ${buildArgs}
                                     Docker build context: ${buildContext}
-                                    """.stripIndent().concat("Job Properties:\n${propertiesToString}\n").concat('#' * 80)
+                                    """.stripIndent()
+                                        .concat("Job Properties:\n${propertiesToString}\n")
+                                        .concat('#' * 80).concat('\n')
+                                        .concat('#' * 80).concat('\n')
+                                        .concat('#' * 80).concat('\n')
 
                                 String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
