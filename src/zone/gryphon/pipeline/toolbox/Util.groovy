@@ -26,6 +26,10 @@ static String entropy() {
     return UUID.randomUUID().toString().replace("-", "")
 }
 
+static String shortHash(CheckoutInformation checkoutInformation) {
+    return checkoutInformation.gitCommit.substring(0, 7)
+}
+
 def sh(Map map = [:], String script) {
     String label = map['label']
     boolean quiet = map['quiet'] ?: false

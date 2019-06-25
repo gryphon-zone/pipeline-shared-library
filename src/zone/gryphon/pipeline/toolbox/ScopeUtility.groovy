@@ -15,31 +15,31 @@
 
 package zone.gryphon.pipeline.toolbox
 
-void withTimestamps(Closure body) {
+def withTimestamps(Closure body) {
     timestamps {
         return body()
     }
 }
 
-void withColor(String color = 'xterm', Closure body) {
+def withColor(String color = 'xterm', Closure body) {
     ansiColor(color) {
         return body()
     }
 }
 
-void withAbsoluteTimeout(minutes = 60, Closure body) {
+def withAbsoluteTimeout(minutes = 60, Closure body) {
     timeout(time: minutes) {
         return body()
     }
 }
 
-void withTimeout(minutes = 10, Closure body) {
+def withTimeout(minutes = 10, Closure body) {
     timeout(activity: true, time: minutes) {
         return body()
     }
 }
 
-void withRandomAutoCleaningWorkspace(Closure body) {
+def withRandomAutoCleaningWorkspace(Closure body) {
     withRandomWorkspace {
         try {
             return body()
@@ -50,8 +50,20 @@ void withRandomAutoCleaningWorkspace(Closure body) {
     }
 }
 
-void withRandomWorkspace(Closure body) {
+def withRandomWorkspace(Closure body) {
     ws("workspace/${Util.entropy()}") {
         return body()
+    }
+}
+
+def withExecutor(Map map = [:], String label, Closure body) {
+    String stageName = map['stageName'] ?: 'Await Executor'
+
+    stage(stageName) {
+        node(label) {
+            withRandomAutoCleaningWorkspace {
+                return body()
+            }
+        }
     }
 }
