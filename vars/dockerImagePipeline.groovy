@@ -200,7 +200,17 @@ def call(String githubOrganization, Closure body) {
                                             }
 
                                         } finally {
-                                            util.sh("docker logout", quiet: true)
+                                            try {
+                                                util.sh("docker logout", quiet: true)
+                                            } catch(Exception e) {
+                                                echo "WARNING: failed to log out of docker. ${e.class.simpleName}: ${e.message}"
+                                            }
+
+                                            try {
+                                                util.sh("rm -f \"${HOME}/.docker/config.json\"", quiet: true)
+                                            } catch (Exception e) {
+                                                echo "WARNING: failed to remove docker credentials file. ${e.class.simpleName}: ${e.message}"
+                                            }
                                         }
                                     }
                                 } else {
