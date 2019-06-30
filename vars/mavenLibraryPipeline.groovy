@@ -94,7 +94,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
 
     writeFile(encoding: 'UTF-8', file: "${homeDir}/.m2/settings.xml", text: libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml'))
 
-    echo "m2 file: ${m2File}"
+    util.sh("cat ${homeDir}/.m2/settings.xml")
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
