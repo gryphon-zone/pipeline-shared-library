@@ -58,6 +58,14 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
             -Dresume=false
             """.stripIndent(), returnType: 'none')
 
+    String releaseTag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
+
+    util.sh("""\
+        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+            release:perform \
+            -DlocalCheckout='true'
+            """.stripIndent(), returnType: 'none')
+
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
