@@ -116,7 +116,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
 
     final String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
-    final String version = "${readMavenVersion().replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
+    final String version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
     currentBuild.displayName = "${version} (#${info.build})"
 //    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
