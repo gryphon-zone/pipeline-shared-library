@@ -95,10 +95,10 @@ def call(String githubOrganization, Closure body) {
                     //noinspection GroovyVariableNotAssigned
                     scope.withTimeout(config.timeoutMinutes) {
 
-                        // TODO: dynamically generate repo location
+                        // TODO: dynamically generate cache location
                         String dockerArgs = """\
                             -v /var/run/docker.sock:/var/run/docker.sock 
-                            -v jenkins-m2-shared-cache:'/root/.m2/repository'
+                            -v jenkins-shared-m2-cache:'/root/.m2/repository'
                             """.stripIndent().replace("\n", "")
 
                         echo "Docker args: ${dockerArgs}"
