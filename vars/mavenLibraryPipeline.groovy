@@ -30,11 +30,7 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
         checkoutInformation = util.checkoutProject()
     }
 
-    sh 'whoami'
-    sh 'echo $HOME'
-    sh "mount"
-    sh "ls -lah /root"
-    sh "ls -lah /root/.m2"
+    sh 'mvn validate'
 }
 
 def call(String githubOrganization, Closure body) {
