@@ -101,14 +101,14 @@ def call(String githubOrganization, Closure body) {
 
     scope.withTimestamps {
 
+        // add support for ANSI color
+        scope.withColor {
+
         // no build is allowed to run for more than 1 hour
         scope.withAbsoluteTimeout(60) {
 
             // run all commands inside docker agent
             scope.withExecutor('docker') {
-
-                // add support for ANSI color
-                scope.withColor {
 
                     final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
                     final Util util = new Util()
