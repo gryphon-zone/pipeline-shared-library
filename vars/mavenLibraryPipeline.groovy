@@ -29,8 +29,12 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
     String suffix = checkoutInformation.gitCommit.substring(0, 7)
     JobInformation info = util.getJobInformation()
 
+    // needed to prevent failures when attempting to make commits
+    util.sh("git config user.email '${checkoutInformation.gitAuthorEmail}'")
+    util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
+
     util.sh("""\
-        MAVEN_OPTS='${mavenOpts}' mvn \
+        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
             release:prepare \
             -DpushChanges=false \
             -DpreparationGoals='validate' \
