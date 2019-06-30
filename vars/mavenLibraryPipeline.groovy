@@ -73,15 +73,19 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
                     -Dossrh.password='${OSSRH_PASSWORD}'
                     """.stripIndent(), returnType: 'none')
             }
+
+            sshagent(['github-ssh']) {
+                sh 'mkdir ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config'
+
+                util.sh("git tag --delete '${releaseTag}'", returnType: 'none')
+                util.sh("git push --signed origin '${tag}'", returnType: 'none')
+            }
         }
     } finally {
 
         // remove GPG keys
         util.sh('rm -rf ${HOME}/.gnupg', returnType: 'none')
     }
-
-    util.sh("git tag --delete '${releaseTag}'", returnType: 'none')
-    util.sh("git push origin '${tag}'", returnType: 'none')
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
