@@ -39,6 +39,12 @@ def withTimeout(minutes = 10, Closure body) {
     }
 }
 
+def withRandomWorkspace(Closure body) {
+    ws("workspace/${Util.entropy()}") {
+        return body()
+    }
+}
+
 def withRandomAutoCleaningWorkspace(Closure body) {
     withRandomWorkspace {
         try {
@@ -47,12 +53,6 @@ def withRandomAutoCleaningWorkspace(Closure body) {
             echo 'Cleaning workspace'
             cleanWs(notFailBuild: true)
         }
-    }
-}
-
-def withRandomWorkspace(Closure body) {
-    ws("workspace/${Util.entropy()}") {
-        return body()
     }
 }
 
@@ -65,5 +65,23 @@ def withExecutor(Map map = [:], String label, Closure body) {
                 return body()
             }
         }
+    }
+}
+
+def inDockerImage(Map map = [:], String dockerImage, Closure body) {
+    String stageName = map['stageName'] ?: 'Await Docker Startup'
+    String args = map['args'] ?: '-v /var/run/docker.sock:/var/run/docker.sock'
+
+    stage(stageName) {
+        docker.image(dockerImage).inside(args) {
+            return body()
+        }
+    }
+}
+
+void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
+    withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
+        sh """gpg --import \${GPG_SIGNING_KEY}"""
+        body()
     }
 }

@@ -39,6 +39,10 @@ def sh(Map map = [:], String script) {
     boolean returnStatus
 
     switch (returnType) {
+        case 'none':
+            returnStdout = false
+            returnStatus = false
+            break
         case 'stdout':
             returnStdout = true
             returnStatus = false
@@ -118,4 +122,18 @@ CheckoutInformation checkoutProject() {
     out.gitCommitterEmail = vars.GIT_COMMITTER_EMAIL
     out.gitAuthorEmail = vars.GIT_AUTHOR_EMAIL
     return out
+}
+
+void setupMavenConfiguration() {
+    final String file = 'settings.xml'
+
+    String homeDir = this.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
+
+    // writeFile writes into current directory, even if given absolute path
+    writeFile(encoding: 'UTF-8', file: file, text: libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml'))
+
+    // ensure folder exists
+    this.sh("mkdir -p ${homeDir}/.m2", quiet: true)
+
+    this.sh("mv ${file} ${homeDir}/.m2/${file}", quiet: true)
 }
