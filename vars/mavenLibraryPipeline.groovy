@@ -96,6 +96,11 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
         checkoutInformation = util.checkoutProject()
     }
 
+    echo "CHANGE_AUTHOR_EMAIL: ${env.CHANGE_AUTHOR_EMAIL}"
+    echo "CHANGE_AUTHOR: ${env.CHANGE_AUTHOR}"
+    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${env.CHANGE_AUTHOR_DISPLAY_NAME}"
+    return
+
     String homeDir = util.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
     util.sh("mkdir -p ${homeDir}/.m2")
     String settings = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
@@ -128,11 +133,6 @@ def call(String githubOrganization, Closure body) {
 
                 // run all commands inside docker agent
                 scope.withExecutor('docker') {
-
-                    echo "CHANGE_AUTHOR_EMAIL: ${env.CHANGE_AUTHOR_EMAIL}"
-                    echo "CHANGE_AUTHOR: ${env.CHANGE_AUTHOR}"
-                    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${env.CHANGE_AUTHOR_DISPLAY_NAME}"
-                    return
 
                     final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
                     final Util util = new Util()
