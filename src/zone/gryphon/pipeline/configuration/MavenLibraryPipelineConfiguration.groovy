@@ -25,7 +25,7 @@ class MavenLibraryPipelineConfiguration {
     /**
      * Docker image to run maven build in
      */
-    String buildAgent = 'gryphonzone/java:jdk11'
+    String buildAgent = 'gryphonzone/java:11-jdk'
 
     /**
      * Regex for which branches are considered "releasable".
