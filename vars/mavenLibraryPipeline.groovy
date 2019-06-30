@@ -30,7 +30,8 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
         checkoutInformation = util.checkoutProject()
     }
 
-    sh 'mvn -B validate'
+    sh 'whoami'
+    sh 'echo $HOME'
 }
 
 def call(String githubOrganization, Closure body) {
@@ -96,7 +97,7 @@ def call(String githubOrganization, Closure body) {
                     scope.withTimeout(config.timeoutMinutes) {
 
                         // run build inside of docker build image
-                        scope.inDockerImage(config.buildAgent) {
+                        scope.inDockerImage(config.buildAgent, args: '-v /var/run/docker.sock:/var/run/docker.sock') {
 
                             build(config, util, deployable)
 
