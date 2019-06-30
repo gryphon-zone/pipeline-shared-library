@@ -24,8 +24,12 @@ import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
 
-private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
+@SuppressWarnings("GrMethodMayBeStatic")
+private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, CheckoutInformation checkoutInformation, String mavenOpts) {
+    String suffix = checkoutInformation.gitCommit.substring(0, 7)
+    echo "${suffix}"
 
+//    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}", returnType: 'none')
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
@@ -43,7 +47,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
     if (config.performRelease) {
-        performRelease(config, util, mavenOpts)
+        performRelease(config, util, checkoutInformation, mavenOpts)
     } else {
         performBuild(config, util, mavenOpts)
     }
