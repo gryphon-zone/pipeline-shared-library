@@ -44,6 +44,10 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
             -DupdateWorkingCopyVersions=false \
             -Dresume=false
             """.stripIndent(), returnType: 'none')
+
+    String tag = util.sh("""`grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'`""")
+
+    echo "Calculated tag: ${tag}"
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
