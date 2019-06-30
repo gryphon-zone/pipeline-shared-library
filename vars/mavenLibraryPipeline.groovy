@@ -31,6 +31,8 @@ private String readMavenReleaseTag(final Util util) {
 @SuppressWarnings("GrMethodMayBeStatic")
 private String readMavenVersion(final Util util) {
     return util.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true)
+            .replace('\r\n', '')
+            .trim()
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
