@@ -39,6 +39,12 @@ def withTimeout(minutes = 10, Closure body) {
     }
 }
 
+def withRandomWorkspace(Closure body) {
+    ws("workspace/${Util.entropy()}") {
+        return body()
+    }
+}
+
 def withRandomAutoCleaningWorkspace(Closure body) {
     withRandomWorkspace {
         try {
@@ -50,12 +56,6 @@ def withRandomAutoCleaningWorkspace(Closure body) {
     }
 }
 
-def withRandomWorkspace(Closure body) {
-    ws("workspace/${Util.entropy()}") {
-        return body()
-    }
-}
-
 def withExecutor(Map map = [:], String label, Closure body) {
     String stageName = map['stageName'] ?: 'Await Executor'
 
@@ -64,6 +64,17 @@ def withExecutor(Map map = [:], String label, Closure body) {
             withRandomAutoCleaningWorkspace {
                 return body()
             }
+        }
+    }
+}
+
+def inDockerImage(Map map = [:], String dockerImage, Closure body) {
+    String stageName = map['stageName'] ?: 'Await Docker Startup'
+    String args = map['args'] ?: '-v /var/run/docker.sock:/var/run/docker.sock'
+
+    stage(stageName) {
+        docker.image(dockerImage).inside(args) {
+            return body()
         }
     }
 }
