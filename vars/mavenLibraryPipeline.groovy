@@ -32,6 +32,9 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
 
     sh 'whoami'
     sh 'echo $HOME'
+    sh "mount"
+    sh "ls -lah /root"
+    sh "ls -lah /root/.m2"
 }
 
 def call(String githubOrganization, Closure body) {
@@ -96,13 +99,16 @@ def call(String githubOrganization, Closure body) {
                     //noinspection GroovyVariableNotAssigned
                     scope.withTimeout(config.timeoutMinutes) {
 
-                        sh "whoami"
-                        sh 'echo $HOME'
+                        // TODO: dynamically generate repo location
+                        String dockerArgs = """\
+                            -v /var/run/docker.sock:/var/run/docker.sock 
+                            -v jenkins-m2-shared-cache:'/root/.m2/repository'
+                            """.stripIndent().replace("\n", "")
 
-                        String homeFolder = util.sh('echo ${HOME}', quiet: true)
+                        echo "Docker args: ${dockerArgs}"
 
                         // run build inside of docker build image
-                        scope.inDockerImage(config.buildAgent, args: "-v /var/run/docker.sock:/var/run/docker.sock -v jenkins-m2-shared-cache:'${homeFolder}/.m2/repository'") {
+                        scope.inDockerImage(config.buildAgent, args: dockerArgs) {
 
                             build(config, util, deployable)
 
