@@ -16,6 +16,7 @@
 
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.MavenLibraryPipelineConfiguration
+import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
@@ -23,7 +24,15 @@ import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
 
-private def build(final MavenLibraryPipelineConfiguration config, final Util util, final boolean deployable) {
+private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
+
+}
+
+private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
+    sh "MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}"
+}
+
+private def build(final ParsedMavenLibraryPipelineConfiguration config, final Util util) {
     CheckoutInformation checkoutInformation
 
     stage('Checkout Project') {
@@ -32,7 +41,11 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
-    sh "MAVEN_OPTS=\"${mavenOpts}\" mvn -Dstyle.color=always -V -B validate"
+    if (config.performRelease) {
+        performRelease(config, util, mavenOpts)
+    } else {
+        performBuild(config, util, mavenOpts)
+    }
 }
 
 def call(String githubOrganization, Closure body) {
@@ -52,6 +65,7 @@ def call(String githubOrganization, Closure body) {
                 // add support for ANSI color
                 scope.withColor {
 
+                    final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
                     final Util util = new Util()
                     final ConfigurationHelper helper = new ConfigurationHelper()
                     final JobInformation info = util.getJobInformation()
@@ -86,10 +100,15 @@ def call(String githubOrganization, Closure body) {
                         //noinspection GroovyAssignabilityCheck
                         properties(calculatedJobProperties)
 
+
+                        parsedConfiguration.performRelease = deployable && config.performRelease
+
                         if (wasTriggerByScm) {
                             // SCM change triggered build, use the parameter definitions from the configuration
+                            parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
                         } else {
                             // manual build, use the values passed in the parameters
+                            parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
                         }
                     }
 
@@ -108,7 +127,7 @@ def call(String githubOrganization, Closure body) {
                         // run build inside of docker build image
                         scope.inDockerImage(config.buildAgent, args: dockerArgs) {
 
-                            build(config, util, deployable)
+                            build(parsedConfiguration, util)
 
                         }
                     }
