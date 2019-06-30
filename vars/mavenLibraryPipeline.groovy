@@ -30,7 +30,7 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
         checkoutInformation = util.checkoutProject()
     }
 
-    sh 'mvn validate'
+    sh 'mvn -B validate'
 }
 
 def call(String githubOrganization, Closure body) {
