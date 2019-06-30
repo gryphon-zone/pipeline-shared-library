@@ -174,7 +174,7 @@ def call(String githubOrganization, Closure body) {
                         if (deployable) {
                             buildParameters.add(
                                     booleanParam(
-                                            defaultValue: config.performRelease,
+                                            defaultValue: config.automaticallyRelease,
                                             description: 'Whether or not to release the maven artifacts',
                                             name: 'performRelease'
                                     )
@@ -197,7 +197,7 @@ def call(String githubOrganization, Closure body) {
                         //noinspection GroovyAssignabilityCheck
                         properties(calculatedJobProperties)
 
-                        parsedConfiguration.performRelease = deployable && config.performRelease
+                        parsedConfiguration.performRelease = deployable && config.automaticallyRelease
 
                         if (wasTriggerByScm) {
                             // SCM change triggered build, use the parameter definitions from the configuration

@@ -43,7 +43,7 @@ class MavenLibraryPipelineConfiguration {
      *
      * Ignored if the branch being built does not match the deployableBranchRegex
      */
-    boolean performRelease = true
+    boolean automaticallyRelease = true
 
     /**
      * Custom job properties
