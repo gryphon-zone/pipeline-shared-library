@@ -96,6 +96,9 @@ def call(String githubOrganization, Closure body) {
                     //noinspection GroovyVariableNotAssigned
                     scope.withTimeout(config.timeoutMinutes) {
 
+                        sh "whoami"
+                        sh 'echo $HOME'
+
                         String homeFolder = util.sh('echo ${HOME}', quiet: true)
 
                         // run build inside of docker build image
