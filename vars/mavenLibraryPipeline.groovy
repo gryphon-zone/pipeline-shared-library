@@ -64,11 +64,15 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
 
     try {
         scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-            util.sh("""\
-            MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
-                release:perform \
-                -DlocalCheckout='true'
-                """.stripIndent(), returnType: 'none')
+            withCredentials([usernamePassword(credentialsId: 'ossrh', passwordVariable: 'OSSRH_USERNAME', usernameVariable: 'OSSRH_PASSWORD')]) {
+                util.sh("""\
+                MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
+                    release:perform \
+                    -DlocalCheckout='true' \
+                    -Dossrh.username='${OSSRH_USERNAME}' \
+                    -Dossrh.password='${OSSRH_PASSWORD}'
+                    """.stripIndent(), returnType: 'none')
+            }
         }
     } finally {
 
@@ -95,7 +99,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     String settings = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
     writeFile(encoding: 'UTF-8', file: "settings.xml", text: settings)
     util.sh("mv settings.xml ${homeDir}/.m2/settings.xml", quiet: true)
-    util.sh("cat ${homeDir}/.m2/settings.xml")
+    util.sh("cat ${homeDir}/.m2/settings.xml", returnType: 'stdout')
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
