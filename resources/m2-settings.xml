@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <servers>
+    <server>
+      <id>ossrh</id>
+      <username>${ossrh.username}</username>
+      <password>${ossrh.password}</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+        <id>additional-repos</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <repositories>
+            <repository>
+                <releases>
+                    <enabled>true</enabled>
+                    <updatePolicy>daily</updatePolicy>
+                    <checksumPolicy>fail</checksumPolicy>
+                </releases>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+                <id>central</id>
+                <name>Maven Central</name>
+                <url>https://repo.maven.apache.org/maven2</url>
+            </repository>
+            <repository>
+                <releases>
+                    <enabled>true</enabled>
+                    <updatePolicy>daily</updatePolicy>
+                    <checksumPolicy>fail</checksumPolicy>
+                </releases>
+                <snapshots>
+                    <enabled>true</enabled>
+                    <updatePolicy>daily</updatePolicy>
+                    <checksumPolicy>fail</checksumPolicy>
+                </snapshots>
+                <id>ossrh</id>
+                <name>Sonatype OSS Repository Hosting</name>
+                <url>https://oss.sonatype.org/content/groups/public</url>
+            </repository>
+            <repository>
+                <releases>
+                    <enabled>true</enabled>
+                    <updatePolicy>daily</updatePolicy>
+                    <checksumPolicy>fail</checksumPolicy>
+                </releases>
+                <snapshots>
+                    <enabled>true</enabled>
+                    <updatePolicy>daily</updatePolicy>
+                    <checksumPolicy>fail</checksumPolicy>
+                </snapshots>
+                <id>jenkins</id>
+                <name>Jenkins CI Hosting</name>
+                <url>https://repo.jenkins-ci.org/public</url>
+            </repository>
+        </repositories>
+    </profile>
+  </profiles>
+</settings>
