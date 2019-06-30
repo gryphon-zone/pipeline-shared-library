@@ -132,7 +132,8 @@ def call(String githubOrganization, Closure body) {
                     echo "CHANGE_AUTHOR_EMAIL: ${CHANGE_AUTHOR_EMAIL}"
                     echo "CHANGE_AUTHOR: ${CHANGE_AUTHOR}"
                     echo "CHANGE_AUTHOR_DISPLAY_NAME: ${CHANGE_AUTHOR_DISPLAY_NAME}"
-                    
+                    return
+
                     final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
                     final Util util = new Util()
                     final ConfigurationHelper helper = new ConfigurationHelper()
