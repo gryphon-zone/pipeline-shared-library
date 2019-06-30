@@ -90,7 +90,9 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
         checkoutInformation = util.checkoutProject()
     }
 
-    String m2File = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
+    String homeDir = util.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
+
+    writeFile(encoding: 'UTF-8', file: "${homeDir}/.m2/settings.xml", text: libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml'))
 
     echo "m2 file: ${m2File}"
 
