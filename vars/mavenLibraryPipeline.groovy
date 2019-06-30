@@ -96,24 +96,18 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
         checkoutInformation = util.checkoutProject()
     }
 
-    echo "CHANGE_AUTHOR_EMAIL: ${env.CHANGE_AUTHOR_EMAIL}"
-    echo "CHANGE_AUTHOR: ${env.CHANGE_AUTHOR}"
-    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${env.CHANGE_AUTHOR_DISPLAY_NAME}"
-    return
-
-    String homeDir = util.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
-    util.sh("mkdir -p ${homeDir}/.m2")
-    String settings = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
-    writeFile(encoding: 'UTF-8', file: "settings.xml", text: settings)
-    util.sh("mv settings.xml ${homeDir}/.m2/settings.xml", quiet: true)
-    util.sh("cat ${homeDir}/.m2/settings.xml", returnType: 'stdout')
+    util.setupMavenConfiguration()
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
     if (config.performRelease) {
-        performRelease(config, util, checkoutInformation, mavenOpts)
+        stage ('Perform Maven release') {
+            performRelease(config, util, checkoutInformation, mavenOpts)
+        }
     } else {
-        performBuild(config, util, mavenOpts)
+        stage ('Perform Maven Build') {
+            performBuild(config, util, mavenOpts)
+        }
     }
 }
 
