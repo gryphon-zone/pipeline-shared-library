@@ -30,6 +30,7 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
         checkoutInformation = util.checkoutProject()
     }
 
+    sh 'echo $MAVEN_OPTS'
     sh 'mvn -B validate'
 }
 
