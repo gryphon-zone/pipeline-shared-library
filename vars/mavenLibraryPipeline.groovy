@@ -64,7 +64,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
 
     try {
         scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-            withCredentials([usernamePassword(credentialsId: 'ossrh', passwordVariable: 'OSSRH_USERNAME', usernameVariable: 'OSSRH_PASSWORD')]) {
+            withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
                 util.sh("""\
                 MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
                     release:perform \
