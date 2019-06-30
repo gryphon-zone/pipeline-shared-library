@@ -78,3 +78,11 @@ def inDockerImage(Map map = [:], String dockerImage, Closure body) {
         }
     }
 }
+
+void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
+    withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
+        sh """gpg --allow-secret-key-import --import \${GPG_SIGNING_KEY} && echo "\${${keyIdEnvVariable}}:6:" | gpg --import-ownertrust"""
+
+        body()
+    }
+}
