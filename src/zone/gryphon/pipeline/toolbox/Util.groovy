@@ -39,6 +39,10 @@ def sh(Map map = [:], String script) {
     boolean returnStatus
 
     switch (returnType) {
+        case 'none':
+            returnStdout = false
+            returnStatus = false
+            break
         case 'stdout':
             returnStdout = true
             returnStatus = false
