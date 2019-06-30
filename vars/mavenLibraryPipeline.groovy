@@ -50,7 +50,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
     String nextVersion = tag.replace("${info.build}-${suffix}", "${info.build + 1}-${suffix}")
 
 
-        util.sh("""\
+    util.sh("""\
             MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
                 release:prepare \
                 -DreleaseVersion="${tag}" \
@@ -123,12 +123,16 @@ def call(String githubOrganization, Closure body) {
         // add support for ANSI color
         scope.withColor {
 
-        // no build is allowed to run for more than 1 hour
-        scope.withAbsoluteTimeout(60) {
+            // no build is allowed to run for more than 1 hour
+            scope.withAbsoluteTimeout(60) {
 
-            // run all commands inside docker agent
-            scope.withExecutor('docker') {
+                // run all commands inside docker agent
+                scope.withExecutor('docker') {
 
+                    echo "CHANGE_AUTHOR_EMAIL: ${CHANGE_AUTHOR_EMAIL}"
+                    echo "CHANGE_AUTHOR: ${CHANGE_AUTHOR}"
+                    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${CHANGE_AUTHOR_DISPLAY_NAME}"
+                    
                     final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
                     final Util util = new Util()
                     final ConfigurationHelper helper = new ConfigurationHelper()
