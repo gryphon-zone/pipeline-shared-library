@@ -96,8 +96,10 @@ def call(String githubOrganization, Closure body) {
                     //noinspection GroovyVariableNotAssigned
                     scope.withTimeout(config.timeoutMinutes) {
 
+                        String homeFolder = util.sh('echo ${HOME}', quiet: true)
+
                         // run build inside of docker build image
-                        scope.inDockerImage(config.buildAgent, args: '-v /var/run/docker.sock:/var/run/docker.sock') {
+                        scope.inDockerImage(config.buildAgent, args: "-v /var/run/docker.sock:/var/run/docker.sock -v jenkins-m2-shared-cache:'${homeFolder}/.m2/repository'") {
 
                             build(config, util, deployable)
 
