@@ -27,9 +27,19 @@ import java.util.regex.Pattern
 @SuppressWarnings("GrMethodMayBeStatic")
 private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, CheckoutInformation checkoutInformation, String mavenOpts) {
     String suffix = checkoutInformation.gitCommit.substring(0, 7)
-    echo "${suffix}"
+    JobInformation info = util.getJobInformation()
 
-//    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}", returnType: 'none')
+    util.sh("""\
+        MAVEN_OPTS='${mavenOpts}' mvn \
+            release:prepare \
+            -DpushChanges=false \
+            -DpreparationGoals='validate' \
+            -DremoteTagging=false \
+            -DsuppressCommitBeforeTag=true \
+            -DtagNameFormat="@{project.version}.${info.build}-${suffix}" \
+            -DupdateWorkingCopyVersions=false \
+            -Dresume=false
+            """.stripIndent(), returnType: 'none')
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
