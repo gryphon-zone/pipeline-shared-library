@@ -31,6 +31,8 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
     }
 
     sh 'echo $MAVEN_OPTS'
+    sh 'MAVEN_OPTS=$MAVEN_OPTS foo'
+    sh 'echo $MAVEN_OPTS'
     sh 'mvn -B validate'
 }
 
