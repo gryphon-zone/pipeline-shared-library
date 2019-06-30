@@ -129,9 +129,9 @@ def call(String githubOrganization, Closure body) {
                 // run all commands inside docker agent
                 scope.withExecutor('docker') {
 
-                    echo "CHANGE_AUTHOR_EMAIL: ${CHANGE_AUTHOR_EMAIL}"
-                    echo "CHANGE_AUTHOR: ${CHANGE_AUTHOR}"
-                    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${CHANGE_AUTHOR_DISPLAY_NAME}"
+                    echo "CHANGE_AUTHOR_EMAIL: ${env.CHANGE_AUTHOR_EMAIL}"
+                    echo "CHANGE_AUTHOR: ${env.CHANGE_AUTHOR}"
+                    echo "CHANGE_AUTHOR_DISPLAY_NAME: ${env.CHANGE_AUTHOR_DISPLAY_NAME}"
                     return
 
                     final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
