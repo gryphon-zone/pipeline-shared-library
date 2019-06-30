@@ -45,7 +45,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
             -Dresume=false
             """.stripIndent(), returnType: 'none')
 
-    String tag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'")
+    String tag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
     String nextVersion = tag.replace("${info.build}-${suffix}", "${info.build + 1}-${suffix}")
 
     util.sh("""\
