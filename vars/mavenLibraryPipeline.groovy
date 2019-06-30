@@ -68,6 +68,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
                 util.sh("""\
                 MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
                     release:perform \
+                    -Darguments='-Dstyle.color=always' \
                     -DlocalCheckout='true' \
                     -Dossrh.username='${OSSRH_USERNAME}' \
                     -Dossrh.password='${OSSRH_PASSWORD}'
@@ -78,7 +79,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
                 sh 'mkdir ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config'
 
                 util.sh("git tag --delete '${releaseTag}'", returnType: 'none')
-                util.sh("git push --signed origin '${tag}'", returnType: 'none')
+                util.sh("git push origin '${tag}'", returnType: 'none')
             }
         }
     } finally {
