@@ -80,6 +80,8 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
         util.sh('rm -rf ${HOME}/.gnupg', returnType: 'none')
     }
 
+    util.sh("git tag --delete '${releaseTag}'", returnType: 'none')
+    util.sh("git push origin '${tag}'", returnType: 'none')
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
