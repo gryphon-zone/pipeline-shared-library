@@ -85,6 +85,7 @@ def call(String githubOrganization, Closure body) {
 
                         List buildParameters = []
 
+                        String defaultMavenArgs
                         if (deployable) {
                             buildParameters.add(
                                     booleanParam(
@@ -93,14 +94,23 @@ def call(String githubOrganization, Closure body) {
                                             name: 'performRelease'
                                     )
                             )
+
+                            defaultMavenArgs = config.mavenDeployArguments
+                        } else {
+                            defaultMavenArgs = config.mavenNonDeployArguments
                         }
+
+                        buildParameters.add(0, stringParam(
+                                defaultValue: defaultMavenArgs,
+                                description: 'Maven arguments (does not include goals)',
+                                name: 'mavenArguments'
+                        ))
 
                         calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
 
                         // set job properties
                         //noinspection GroovyAssignabilityCheck
                         properties(calculatedJobProperties)
-
 
                         parsedConfiguration.performRelease = deployable && config.performRelease
 
@@ -109,7 +119,7 @@ def call(String githubOrganization, Closure body) {
                             parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
                         } else {
                             // manual build, use the values passed in the parameters
-                            parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
+                            parsedConfiguration.mavenArguments = "${params.mavenArguments}"
                         }
                     }
 
