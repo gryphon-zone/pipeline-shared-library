@@ -73,7 +73,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
     } finally {
 
         // remove GPG keys
-        util.sh('rm -rfv ${HOME}/.gnupg', returnType: 'none')
+        util.sh('rm -rf ${HOME}/.gnupg', returnType: 'none')
     }
 
 }
@@ -89,6 +89,10 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     stage('Checkout Project') {
         checkoutInformation = util.checkoutProject()
     }
+
+    String m2File = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
+
+    echo "m2 file: ${m2File}"
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
