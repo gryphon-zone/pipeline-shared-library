@@ -49,7 +49,7 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
     String tag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
     String nextVersion = tag.replace("${info.build}-${suffix}", "${info.build + 1}-${suffix}")
 
-    scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+
         util.sh("""\
             MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
                 release:prepare \
@@ -58,17 +58,17 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
                 -DpushChanges=false \
                 -DremoteTagging=false \
                 -Dresume=false \
-                -Dgpg.keyname="\${GPG_KEYID}"
                 """.stripIndent(), returnType: 'none')
-    }
 
     String releaseTag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
 
-    util.sh("""\
-        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
-            release:perform \
-            -DlocalCheckout='true'
-            """.stripIndent(), returnType: 'none')
+    scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+        util.sh("""\
+            MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+                release:perform \
+                -DlocalCheckout='true'
+                """.stripIndent(), returnType: 'none')
+    }
 
 }
 
