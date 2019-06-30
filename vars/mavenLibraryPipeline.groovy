@@ -28,8 +28,9 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
 
 }
 
+@SuppressWarnings("GrMethodMayBeStatic")
 private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
-    sh "MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}"
+    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}")
 }
 
 private def build(final ParsedMavenLibraryPipelineConfiguration config, final Util util) {
