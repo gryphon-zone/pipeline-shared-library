@@ -46,11 +46,13 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
             """.stripIndent(), returnType: 'none')
 
     String tag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'")
+    String nextVersion = tag.replace("${info.build}-${suffix}", "${info.build + 1}-${suffix}")
 
     util.sh("""\
         MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
             release:prepare \
             -DreleaseVersion="${tag}" \
+            -DdevelopmentVersion="${nextVersion}" \
             -DpushChanges=false \
             -DremoteTagging=false \
             -Dresume=false
