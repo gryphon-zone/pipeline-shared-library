@@ -62,12 +62,18 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
 
     String releaseTag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
 
-    scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-        util.sh("""\
-            MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+    try {
+        scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+            util.sh("""\
+            MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
                 release:perform \
                 -DlocalCheckout='true'
                 """.stripIndent(), returnType: 'none')
+        }
+    } finally {
+
+        // remove GPG keys
+        util.sh('rm -rfv ${HOME}/.gnupg', returnType: 'none')
     }
 
 }
