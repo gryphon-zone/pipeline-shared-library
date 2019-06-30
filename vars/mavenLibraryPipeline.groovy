@@ -93,9 +93,8 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     String homeDir = util.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
     util.sh("mkdir -p ${homeDir}/.m2")
     String settings = libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml')
-    echo "Settings: ${settings}"
-    writeFile(encoding: 'UTF-8', file: "${homeDir}/.m2/settings.xml", text: settings)
-
+    writeFile(encoding: 'UTF-8', file: "settings.xml", text: settings)
+    util.sh("mv settings.xml ${homeDir}/.m2/settings.xml", quiet: true)
     util.sh("cat ${homeDir}/.m2/settings.xml")
 
     String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
