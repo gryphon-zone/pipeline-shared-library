@@ -30,10 +30,9 @@ private def build(final MavenLibraryPipelineConfiguration config, final Util uti
         checkoutInformation = util.checkoutProject()
     }
 
-    sh 'echo $MAVEN_OPTS'
-    sh 'MAVEN_OPTS="$MAVEN_OPTS foo"'
-    sh 'echo $MAVEN_OPTS'
-    sh 'mvn -B validate'
+    String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+
+    sh "MAVEN_OPTS=\"${mavenOpts}\" mvn -Dstyle.color=always -V -B validate"
 }
 
 def call(String githubOrganization, Closure body) {
