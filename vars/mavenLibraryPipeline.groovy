@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.MavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConfiguration
@@ -22,64 +21,71 @@ import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
-import java.util.regex.Pattern
+@SuppressWarnings("GrMethodMayBeStatic")
+private String readMavenReleaseTag(final Util util) {
+    return util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'", quiet: true)
+            .replace("\r\n", "")
+            .trim()
+}
 
 @SuppressWarnings("GrMethodMayBeStatic")
-private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, CheckoutInformation checkoutInformation, String mavenOpts) {
-    final ScopeUtility scope = new ScopeUtility()
-    String suffix = checkoutInformation.gitCommit.substring(0, 7)
-    JobInformation info = util.getJobInformation()
+private String readMavenVersion(final Util util) {
+    return util.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true)
+}
 
-    // needed to prevent failures when attempting to make commits
-    util.sh("git config user.email '${checkoutInformation.gitAuthorEmail}'")
-    util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
+@SuppressWarnings("GrMethodMayBeStatic")
+private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, final String releaseVersion, String mavenOpts) {
+    final ScopeUtility scope = new ScopeUtility()
 
     util.sh("""\
         MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
             release:prepare \
+            -Darguments='-Dstyle.color=always' \
             -DpushChanges=false \
             -DpreparationGoals='validate' \
             -DremoteTagging=false \
+            -Dtag='${releaseVersion}' \
             -DsuppressCommitBeforeTag=true \
-            -DtagNameFormat="@{project.version}.${info.build}-${suffix}" \
             -DupdateWorkingCopyVersions=false \
             -Dresume=false
             """.stripIndent(), returnType: 'none')
 
-    String tag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
-    String nextVersion = tag.replace("${info.build}-${suffix}", "${info.build + 1}-${suffix}")
-
-
     util.sh("""\
-            MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
-                release:prepare \
-                -DreleaseVersion="${tag}" \
-                -DdevelopmentVersion="${nextVersion}" \
-                -DpushChanges=false \
-                -DremoteTagging=false \
-                -Dresume=false \
-                """.stripIndent(), returnType: 'none')
+        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+            release:prepare \
+            -DpreparationGoals='clean verify' \
+            -Darguments='-Dstyle.color=always' \
+            -DreleaseVersion='${releaseVersion}' \
+            -DdevelopmentVersion='${releaseVersion}-mvn-release-SNAPSHOT' \
+            -DpushChanges=false \
+            -DremoteTagging=false \
+            -Dresume=false \
+            """.stripIndent(), returnType: 'none')
 
-    String releaseTag = util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'").replace("\r\n", "").trim()
+    String gitBuildTag = readMavenReleaseTag(util)
 
     try {
         scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
             withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
+
+                // push artifacts
                 util.sh("""\
-                MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
-                    release:perform \
-                    -Darguments='-Dstyle.color=always' \
-                    -DlocalCheckout='true' \
-                    -Dossrh.username='${OSSRH_USERNAME}' \
-                    -Dossrh.password='${OSSRH_PASSWORD}'
-                    """.stripIndent(), returnType: 'none')
+                    MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
+                        release:perform \
+                        -Darguments='-Dstyle.color=always' \
+                        -DlocalCheckout='true' \
+                        -Dossrh.username='${OSSRH_USERNAME}' \
+                        -Dossrh.password='${OSSRH_PASSWORD}'
+                        """.stripIndent(), returnType: 'none')
             }
 
-            sshagent(['github-ssh']) {
-                sh 'mkdir ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config'
+            // can delete tag now that code was released
+            util.sh("git tag --delete '${gitBuildTag}'", quiet: true)
 
-                util.sh("git tag --delete '${releaseTag}'", returnType: 'none')
-                util.sh("git push origin '${tag}'", returnType: 'none')
+            // push release tag to remote
+            sshagent(['github-ssh']) {
+                util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config', quiet: true)
+                util.sh("git push origin '${releaseVersion}'", returnType: 'none')
             }
         }
     } finally {
@@ -95,22 +101,32 @@ private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, f
 }
 
 private def build(final ParsedMavenLibraryPipelineConfiguration config, final Util util) {
+    final JobInformation info = util.getJobInformation()
     CheckoutInformation checkoutInformation
 
     stage('Checkout Project') {
         checkoutInformation = util.checkoutProject()
+
+        // needed to prevent failures when attempting to make commits
+        util.sh("git config user.email '${checkoutInformation.gitAuthorEmail}'")
+        util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
     }
 
     util.setupMavenConfiguration()
 
-    String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+    final String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+
+    final String version = "${readMavenVersion().replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
+
+    currentBuild.displayName = "${version} (#${info.build})"
+//    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
     if (config.performRelease) {
-        stage ('Perform Maven release') {
-            performRelease(config, util, checkoutInformation, mavenOpts)
+        stage('Perform Maven release') {
+            performRelease(config, util, version, mavenOpts)
         }
     } else {
-        stage ('Perform Maven Build') {
+        stage('Perform Maven Build') {
             performBuild(config, util, mavenOpts)
         }
     }
