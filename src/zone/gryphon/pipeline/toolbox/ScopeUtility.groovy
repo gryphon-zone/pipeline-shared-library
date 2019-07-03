@@ -81,14 +81,14 @@ def inDockerImage(Map map = [:], String dockerImage, Closure body) {
 
 void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
-        sh "gpg --batch --yes --import ${GPG_SIGNING_KEY}"
+        final Util util = new Util()
+        util.sh("gpg --batch --yes --import ${GPG_SIGNING_KEY}", returnType: 'none', quiet: true)
 
         try {
             return body()
         } finally {
-            String k = env[keyIdEnvVariable]
-            String fingerprint = new Util().sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${k} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'")
-            sh "gpg --batch --yes --delete-secret-and-public-key ${fingerprint}"
+            String fingerprint = util.sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${env[keyIdEnvVariable]} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'", quiet: true)
+            util.sh("gpg --batch --yes --delete-secret-and-public-key ${fingerprint}", quiet: true)
         }
     }
 }
