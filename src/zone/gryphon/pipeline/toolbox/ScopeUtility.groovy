@@ -86,7 +86,7 @@ void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Clos
         try {
             return body()
         } finally {
-            String k = env[${keyIdEnvVariable}]
+            String k = env[keyIdEnvVariable]
             sh "gpg --delete-secret-and-public-key ${k}"
         }
     }
