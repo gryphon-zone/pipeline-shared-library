@@ -32,7 +32,7 @@ private String readMavenVersion(final Util util) {
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
-private def performRelease(final Util util, final String releaseVersion, String mavenOpts) {
+private def performRelease(final Util util, final String releaseVersion, final String mavenOpts) {
     final ScopeUtility scope = new ScopeUtility()
 
     // maven command. Note that parameters and goals aren't configurable, since we should have already performed
@@ -64,37 +64,31 @@ private def performRelease(final Util util, final String releaseVersion, String 
             -DdevelopmentVersion='${releaseVersion}-mvn-release-SNAPSHOT' \
             """.stripIndent(), returnType: 'none')
 
-    try {
-        scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-            withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
+    scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+        withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
 
-                // push artifacts
-                util.sh("""\
-                    ${mvn} \
-                        release:perform \
-                        -Darguments='-Dstyle.color=always -DskipTests=true' \
-                        -DlocalCheckout='true' \
-                        -Dossrh.username='${OSSRH_USERNAME}' \
-                        -Dossrh.password='${OSSRH_PASSWORD}'
-                        """.stripIndent(), returnType: 'none')
-            }
-
-            // push release tag to remote
-            sshagent(['github-ssh']) {
-                util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config', quiet: true)
-                util.sh("git push origin '${releaseVersion}'", returnType: 'none')
-            }
+            // push artifacts
+            util.sh("""\
+                ${mvn} \
+                    release:perform \
+                    -Darguments='-Dstyle.color=always -DskipTests=true' \
+                    -DlocalCheckout='true' \
+                    -Dossrh.username='${OSSRH_USERNAME}' \
+                    -Dossrh.password='${OSSRH_PASSWORD}'
+                    """.stripIndent(), returnType: 'none')
         }
-    } finally {
+    }
 
-        // remove GPG keys
-        util.sh('rm -rf ${HOME}/.gnupg', returnType: 'none')
+    // push release tag to remote
+    sshagent(['github-ssh']) {
+        util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config', quiet: true)
+        util.sh("git push origin '${releaseVersion}'", returnType: 'none')
     }
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
 private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
-    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn clean verify ${config.mavenArguments}", returnType: 'none')
+    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
 }
 
 private def build(final ParsedMavenLibraryPipelineConfiguration config, final Util util) {
@@ -186,7 +180,7 @@ def call(String githubOrganization, Closure body) {
 
                         buildParameters.add(0, stringParam(
                                 defaultValue: defaultMavenArgs,
-                                description: 'Maven arguments (does not include goals)',
+                                description: 'Maven build arguments',
                                 name: 'mavenArguments'
                         ))
 
@@ -216,12 +210,6 @@ def call(String githubOrganization, Closure body) {
                             -v /var/run/docker.sock:/var/run/docker.sock 
                             -v jenkins-shared-m2-cache:'/root/.m2/repository'
                             """.stripIndent().replace("\n", "")
-
-                        scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-                            echo 'hi'
-                        }
-
-                        return
 
                         // run build inside of docker build image
                         scope.inDockerImage(config.buildAgent, args: dockerArgs) {

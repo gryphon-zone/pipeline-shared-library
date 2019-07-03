@@ -33,9 +33,9 @@ class MavenLibraryPipelineConfiguration {
      */
     String deployableBranchRegex = 'master'
 
-    String mavenDeployArguments = '-Dstyle.color=always -V -B'
+    String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
-    String mavenNonDeployArguments = '-Dstyle.color=always -V -B'
+    String mavenNonDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
     /**
      * Whether to release commit to maven central.
