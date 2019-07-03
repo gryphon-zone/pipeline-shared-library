@@ -69,7 +69,7 @@ def withExecutor(Map map = [:], String label, Closure body) {
 }
 
 def inDockerImage(Map map = [:], String dockerImage, Closure body) {
-    String stageName = map['stageName'] ?: 'Await Docker Startup'
+    String stageName = map['stageName'] ?: 'Await Build Agent'
     String args = map['args'] ?: '-v /var/run/docker.sock:/var/run/docker.sock'
 
     stage(stageName) {
@@ -81,7 +81,12 @@ def inDockerImage(Map map = [:], String dockerImage, Closure body) {
 
 void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
-        sh """gpg --import \${GPG_SIGNING_KEY}"""
-        body()
+        sh "gpg --import ${GPG_SIGNING_KEY}"
+
+        try {
+            return body()
+        } finally {
+            sh "gpg --delete-secret-and-public-key ${keyIdEnvVariable}"
+        }
     }
 }

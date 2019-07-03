@@ -124,7 +124,7 @@ CheckoutInformation checkoutProject() {
     return out
 }
 
-void setupMavenConfiguration() {
+void configureMavenSettingsFile() {
     final String file = 'settings.xml'
 
     String homeDir = this.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)

@@ -21,50 +21,48 @@ import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
-@SuppressWarnings("GrMethodMayBeStatic")
-private String readMavenReleaseTag(final Util util) {
-    return util.sh("grep 'scm.tag=' < release.properties | sed -E 's/^scm\\.tag=(.*)\$/\\1/g'", quiet: true)
-            .replace("\r\n", "")
-            .trim()
-}
-
+/**
+ * Reads the current version of the maven POM in the current directory
+ */
 @SuppressWarnings("GrMethodMayBeStatic")
 private String readMavenVersion(final Util util) {
-    return util.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true)
+    return ((String) util.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true))
             .replace('\r\n', '')
             .trim()
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
-private def performRelease(final ParsedMavenLibraryPipelineConfiguration config, final Util util, final String releaseVersion, String mavenOpts) {
+private def performRelease(final Util util, final String releaseVersion, String mavenOpts) {
     final ScopeUtility scope = new ScopeUtility()
 
+    // maven command. Note that parameters and goals aren't configurable, since we should have already performed
+    // CI build prior to calling release
+    final String mvn = "MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always -DskipTests=true"
+
+    final String commonPrepareArguments = """\
+        -DpreparationGoals='validate' \
+        -Darguments='-Dstyle.color=always' \
+        -DremoteTagging=false \
+        -DpushChanges=false \
+        -Dresume=false \
+        """.stripIndent().trim()
+
     util.sh("""\
-        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+        ${mvn} \
             release:prepare \
-            -Darguments='-Dstyle.color=always' \
-            -DpushChanges=false \
-            -DpreparationGoals='validate' \
-            -DremoteTagging=false \
+            ${commonPrepareArguments} \
             -Dtag='${releaseVersion}' \
             -DsuppressCommitBeforeTag=true \
             -DupdateWorkingCopyVersions=false \
-            -Dresume=false
             """.stripIndent(), returnType: 'none')
 
     util.sh("""\
-        MAVEN_OPTS='${mavenOpts}' mvn ${config.mavenArguments} \
+        ${mvn} \
             release:prepare \
-            -DpreparationGoals='clean verify' \
-            -Darguments='-Dstyle.color=always' \
+            ${commonPrepareArguments} \
             -DreleaseVersion='${releaseVersion}' \
             -DdevelopmentVersion='${releaseVersion}-mvn-release-SNAPSHOT' \
-            -DpushChanges=false \
-            -DremoteTagging=false \
-            -Dresume=false \
             """.stripIndent(), returnType: 'none')
-
-    String gitBuildTag = readMavenReleaseTag(util)
 
     try {
         scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
@@ -72,17 +70,14 @@ private def performRelease(final ParsedMavenLibraryPipelineConfiguration config,
 
                 // push artifacts
                 util.sh("""\
-                    MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always \
+                    ${mvn} \
                         release:perform \
-                        -Darguments='-Dstyle.color=always' \
+                        -Darguments='-Dstyle.color=always -DskipTests=true' \
                         -DlocalCheckout='true' \
                         -Dossrh.username='${OSSRH_USERNAME}' \
                         -Dossrh.password='${OSSRH_PASSWORD}'
                         """.stripIndent(), returnType: 'none')
             }
-
-            // can delete tag now that code was released
-            util.sh("git tag --delete '${gitBuildTag}'", quiet: true)
 
             // push release tag to remote
             sshagent(['github-ssh']) {
@@ -114,23 +109,26 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
         util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
     }
 
-    util.setupMavenConfiguration()
+    // set up global maven settings
+    util.configureMavenSettingsFile()
 
-    final String mavenOpts = (util.sh('echo $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+    final String mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
+    // generates version tag in the form <pom>.<build>-<commit>
+    // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
     final String version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
     currentBuild.displayName = "${version} (#${info.build})"
+    currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
 
-    sh 'docker ps'
+    stage('Maven Build') {
+        performBuild(config, util, mavenOpts)
+    }
 
     if (config.performRelease) {
-        stage('Perform Maven release') {
-            performRelease(config, util, version, mavenOpts)
-        }
-    } else {
-        stage('Perform Maven Build') {
-            performBuild(config, util, mavenOpts)
+        stage('Maven release') {
+            // note: maven arguments for release aren't configurable
+            performRelease(util, version, mavenOpts)
         }
     }
 }
@@ -219,7 +217,11 @@ def call(String githubOrganization, Closure body) {
                             -v jenkins-shared-m2-cache:'/root/.m2/repository'
                             """.stripIndent().replace("\n", "")
 
-                        echo "Docker args: ${dockerArgs}"
+                        scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+                            echo 'hi'
+                        }
+
+                        return
 
                         // run build inside of docker build image
                         scope.inDockerImage(config.buildAgent, args: dockerArgs) {
