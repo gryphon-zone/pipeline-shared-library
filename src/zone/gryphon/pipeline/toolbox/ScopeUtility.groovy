@@ -81,13 +81,13 @@ def inDockerImage(Map map = [:], String dockerImage, Closure body) {
 
 void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
-        sh "gpg --import ${GPG_SIGNING_KEY}"
+        sh "gpg --batch --yes --import ${GPG_SIGNING_KEY}"
 
         try {
             return body()
         } finally {
             String k = env[keyIdEnvVariable]
-            sh "gpg --delete-secret-and-public-key ${k}"
+            sh "gpg --batch --yes --delete-secret-and-public-key ${k}"
         }
     }
 }
