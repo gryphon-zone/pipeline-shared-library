@@ -121,7 +121,8 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     final String version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
     currentBuild.displayName = "${version} (#${info.build})"
-//    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
+
+    sh 'docker ps'
 
     if (config.performRelease) {
         stage('Perform Maven release') {
