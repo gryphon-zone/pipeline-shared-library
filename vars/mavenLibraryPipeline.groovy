@@ -91,7 +91,8 @@ private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, f
     util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
 }
 
-private def build(final ParsedMavenLibraryPipelineConfiguration config, final Util util) {
+private def build(final ParsedMavenLibraryPipelineConfiguration config) {
+    final Util util = new Util()
     final JobInformation info = util.getJobInformation()
     CheckoutInformation checkoutInformation
 
@@ -127,16 +128,74 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config, final Ut
     }
 }
 
+ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
+    final Util util = new Util()
+
+    final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
+    final ConfigurationHelper helper = new ConfigurationHelper()
+    final JobInformation info = util.getJobInformation()
+
+    MavenLibraryPipelineConfiguration config = helper.configure(body, new MavenLibraryPipelineConfiguration())
+
+    // branch is deployable if it matches the regex AND it's not from a fork
+    boolean deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
+
+    String defaultMavenArgs
+    List buildParameters = []
+
+    if (deployable) {
+        buildParameters.add(
+                booleanParam(
+                        defaultValue: config.automaticallyRelease,
+                        description: 'Whether or not to release the maven artifacts',
+                        name: 'performRelease'
+                )
+        )
+
+        defaultMavenArgs = config.mavenDeployArguments
+    } else {
+        defaultMavenArgs = config.mavenNonDeployArguments
+    }
+
+    buildParameters.add(0, stringParam(
+            defaultValue: defaultMavenArgs,
+            description: 'Maven build arguments',
+            name: 'mavenArguments'
+    ))
+
+    List calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
+
+    // set job properties
+    //noinspection GroovyAssignabilityCheck
+    properties(calculatedJobProperties)
+
+    parsedConfiguration.performRelease = deployable && config.automaticallyRelease
+    parsedConfiguration.buildAgent = config.buildAgent
+    parsedConfiguration.timeoutMinutes = config.timeoutMinutes
+
+    if (util.buildWasTriggerByCommit()) {
+        // SCM change triggered build, use the parameter definitions from the configuration
+        parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
+    } else {
+        // manual build, use the values passed in the parameters
+        parsedConfiguration.mavenArguments = "${params.mavenArguments}"
+    }
+
+    return parsedConfiguration
+}
+
 def call(String githubOrganization, Closure body) {
 
     // only call outside of timestamp block is creation of ScopeUtility,
     // all other calls in the pipeline should happen inside of the timestamp block
     final ScopeUtility scope = new ScopeUtility()
+    ParsedMavenLibraryPipelineConfiguration configuration
 
-    scope.withTimestamps {
+    // add support for ANSI color
+    scope.withColor {
 
-        // add support for ANSI color
-        scope.withColor {
+        // add timestamps to build logs
+        scope.withTimestamps {
 
             // no build is allowed to run for more than 1 hour
             scope.withAbsoluteTimeout(60) {
@@ -144,77 +203,23 @@ def call(String githubOrganization, Closure body) {
                 // run all commands inside docker agent
                 scope.withExecutor('docker') {
 
-                    final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
-                    final Util util = new Util()
-                    final ConfigurationHelper helper = new ConfigurationHelper()
-                    final JobInformation info = util.getJobInformation()
-                    boolean wasTriggerByScm = util.buildWasTriggerByCommit()
-
-
-                    MavenLibraryPipelineConfiguration config
-                    List calculatedJobProperties
-                    boolean deployable
-
                     stage('Parse Configuration') {
-                        config = helper.configure(body, new MavenLibraryPipelineConfiguration())
-
-                        // branch is deployable if it matches the regex AND it's not from a fork
-                        deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
-
-                        List buildParameters = []
-
-                        String defaultMavenArgs
-                        if (deployable) {
-                            buildParameters.add(
-                                    booleanParam(
-                                            defaultValue: config.automaticallyRelease,
-                                            description: 'Whether or not to release the maven artifacts',
-                                            name: 'performRelease'
-                                    )
-                            )
-
-                            defaultMavenArgs = config.mavenDeployArguments
-                        } else {
-                            defaultMavenArgs = config.mavenNonDeployArguments
-                        }
-
-                        buildParameters.add(0, stringParam(
-                                defaultValue: defaultMavenArgs,
-                                description: 'Maven build arguments',
-                                name: 'mavenArguments'
-                        ))
-
-                        calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
-
-                        // set job properties
-                        //noinspection GroovyAssignabilityCheck
-                        properties(calculatedJobProperties)
-
-                        parsedConfiguration.performRelease = deployable && config.automaticallyRelease
-
-                        if (wasTriggerByScm) {
-                            // SCM change triggered build, use the parameter definitions from the configuration
-                            parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
-                        } else {
-                            // manual build, use the values passed in the parameters
-                            parsedConfiguration.mavenArguments = "${params.mavenArguments}"
-                        }
+                        configuration = parseConfiguration(githubOrganization, body)
                     }
 
                     // kill build if it goes longer than a given number of minutes without logging anything
-                    //noinspection GroovyVariableNotAssigned
-                    scope.withTimeout(config.timeoutMinutes) {
+                    scope.withTimeout(configuration.timeoutMinutes) {
 
                         // TODO: dynamically generate cache location
                         String dockerArgs = """\
                             -v /var/run/docker.sock:/var/run/docker.sock 
                             -v jenkins-shared-m2-cache:'/root/.m2/repository'
-                            """.stripIndent().replace("\n", "")
+                            """.stripIndent().replace("\r\n", "")
 
                         // run build inside of docker build image
-                        scope.inDockerImage(config.buildAgent, args: dockerArgs) {
+                        scope.inDockerImage(configuration.buildAgent, args: dockerArgs) {
 
-                            build(parsedConfiguration, util)
+                            build(configuration)
 
                         }
                     }

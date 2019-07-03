@@ -21,4 +21,8 @@ class ParsedMavenLibraryPipelineConfiguration {
 
     boolean performRelease
 
+    int timeoutMinutes
+
+    String buildAgent
+
 }
