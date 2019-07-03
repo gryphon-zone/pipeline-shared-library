@@ -87,7 +87,7 @@ void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Clos
             return body()
         } finally {
             String k = env[keyIdEnvVariable]
-            String fingerprint = sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${k} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'", returnStdout: true)
+            String fingerprint = new Util().sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${k} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'")
             sh "gpg --batch --yes --delete-secret-and-public-key ${fingerprint}"
         }
     }
