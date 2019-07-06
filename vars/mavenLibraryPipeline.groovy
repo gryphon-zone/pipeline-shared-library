@@ -104,12 +104,6 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
         util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
     }
 
-    if (!fileExists('pom.xml')) {
-        echo 'no pom.xml found, aborting build'
-        currentBuild.result = 'UNSTABLE'
-        return
-    }
-
     // set up global maven settings
     util.configureMavenSettingsFile()
 
@@ -121,6 +115,13 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 
     currentBuild.displayName = "${version} (#${info.build})"
     currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
+
+    if (!fileExists('pom.xml')) {
+        echo 'no pom.xml found, aborting build'
+        currentBuild.result = 'UNSTABLE'
+        currentBuild.description = 'pom.xml not present in project root'
+        return
+    }
 
     stage('Maven Build') {
         performBuild(config, util, mavenOpts)
