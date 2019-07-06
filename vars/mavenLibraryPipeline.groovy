@@ -94,6 +94,7 @@ private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, f
 private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     final Util util = new Util()
     final JobInformation info = util.getJobInformation()
+    boolean abort = false
     CheckoutInformation checkoutInformation
 
     stage('Checkout Project') {
@@ -116,15 +117,21 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     currentBuild.displayName = "${version} (#${info.build})"
     currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
 
-    if (!fileExists('pom.xml')) {
-        echo 'no pom.xml found, aborting build'
-        currentBuild.result = 'UNSTABLE'
-        currentBuild.description = 'pom.xml not present in project root'
-        return
+    stage('Maven Build') {
+
+        if (!fileExists('pom.xml')) {
+            echo 'warning: no pom.xml found, aborting build'
+            currentBuild.result = 'UNSTABLE'
+            currentBuild.description = 'pom.xml not present in project root'
+            abort = true
+            return
+        }
+
+        performBuild(config, util, mavenOpts)
     }
 
-    stage('Maven Build') {
-        performBuild(config, util, mavenOpts)
+    if (abort) {
+        return
     }
 
     if (config.performRelease) {
