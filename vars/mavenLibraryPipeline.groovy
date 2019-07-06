@@ -99,6 +99,12 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     stage('Checkout Project') {
         checkoutInformation = util.checkoutProject()
 
+        if (!fileExists('pom.xml')) {
+            echo 'no pom.xml found, aborting build'
+            currentBuild.result = 'UNSTABLE'
+            return
+        }
+
         // needed to prevent failures when attempting to make commits
         util.sh("git config user.email '${checkoutInformation.gitAuthorEmail}'")
         util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
