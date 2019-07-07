@@ -98,6 +98,8 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     CheckoutInformation checkoutInformation
 
     stage('Checkout Project') {
+        util.enableGitColor()
+
         checkoutInformation = util.checkoutProject()
 
         // needed to prevent failures when attempting to make commits

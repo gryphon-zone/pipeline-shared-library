@@ -64,6 +64,12 @@ def sh(Map map = [:], String script) {
     )
 }
 
+void enableGitColor() {
+    this.sh('git config --global color.ui always', returnType: 'none')
+    this.sh('git config --global color.branch always', returnType: 'none')
+    this.sh('git config --global color.status always', returnType: 'none')
+}
+
 boolean buildWasTriggerByCommit() {
     List classCauses = [
             'jenkins.branch.BranchEventCause',
