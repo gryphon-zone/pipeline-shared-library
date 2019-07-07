@@ -112,10 +112,12 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     // set up global maven settings
     util.configureMavenSettingsFile()
 
+    echo('Calculating \'$MAVEN_OPTS\' variable')
     final String mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
 
     // generates version tag in the form <pom>.<build>-<commit>
     // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
+    echo('Calculating build version')
     final String version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
     currentBuild.displayName = "${version} (#${info.build})"
@@ -123,8 +125,9 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 
     stage('Maven Build') {
 
+        echo('Ensuring maven POM exists')
         if (!fileExists('pom.xml')) {
-            echo 'warning: no pom.xml found, aborting build'
+            echo('warning: no pom.xml found, aborting build')
             currentBuild.result = 'UNSTABLE'
             currentBuild.description = 'pom.xml not present in project root'
             abort = true
