@@ -69,8 +69,7 @@ void enableGitColor() {
         git config --global color.ui always && \
         git config --global color.branch always && \
         git config --global color.status always \
-        """.stripIndent(), returnType: 'none')
-    echo this.sh('cat ${HOME}/.gitconfig')
+        """.stripIndent(), quiet: true, returnType: 'none')
 }
 
 boolean buildWasTriggerByCommit() {
@@ -136,13 +135,13 @@ CheckoutInformation checkoutProject() {
 void configureMavenSettingsFile() {
     final String file = 'settings.xml'
 
-    String homeDir = this.sh('echo -n "${HOME}"', returnType: 'stdout', quiet: true)
-
-    // writeFile writes into current directory, even if given absolute path
+    // writeFile always evaluates the path relative to the workspace, even if given absolute path.
+    // so instead of trying to calculate the final destination relative to the current workspace,
+    // write the file into the workspace and then use sh to move it to the correct location
     writeFile(encoding: 'UTF-8', file: file, text: libraryResource(encoding: 'UTF-8', resource: '/m2-settings.xml'))
 
-    // ensure folder exists
-    this.sh("mkdir -p ${homeDir}/.m2", quiet: true)
-
-    this.sh("mv ${file} ${homeDir}/.m2/${file}", quiet: true)
+    this.sh("""\
+         mkdir -p "\${HOME}/.m2" && \
+         mv ${file} \${HOME}/.m2/${file}
+         """.stripIndent(), quiet: true)
 }
