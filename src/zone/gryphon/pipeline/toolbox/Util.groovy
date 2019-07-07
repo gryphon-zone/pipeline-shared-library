@@ -69,7 +69,7 @@ void enableGitColor() {
         git config --global color.ui always && \
         git config --global color.branch always && \
         git config --global color.status always && \
-        """.stripIndent(), quiet: true, returnType: 'none')
+        """.stripIndent(), returnType: 'none')
     echo this.sh('cat ${HOME}/.gitconfig')
 }
 
