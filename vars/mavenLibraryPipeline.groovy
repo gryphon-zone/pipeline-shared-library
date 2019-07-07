@@ -103,8 +103,10 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
         checkoutInformation = util.checkoutProject()
 
         // needed to prevent failures when attempting to make commits
-        util.sh("git config user.email '${checkoutInformation.gitAuthorEmail}'")
-        util.sh("git config user.name '${checkoutInformation.gitAuthorName}'")
+        util.sh("""\
+            git config user.email '${checkoutInformation.gitAuthorEmail}' && \
+            git config user.name '${checkoutInformation.gitAuthorName}'
+            """.stripIndent())
     }
 
     // set up global maven settings

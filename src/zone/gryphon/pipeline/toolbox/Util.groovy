@@ -64,7 +64,11 @@ def sh(Map map = [:], String script) {
     )
 }
 
-void enableGitColor() {
+void enableGitColor(boolean quiet = false) {
+    if (!quiet) {
+        echo("Enabling colorized git output")
+    }
+
     this.sh("""\
         git config --global color.ui always && \
         git config --global color.branch always && \
@@ -118,6 +122,8 @@ JobInformation getJobInformation() {
 CheckoutInformation checkoutProject() {
     def vars = checkout scm
 
+    echo("Raw SCM information: ${vars}")
+
     CheckoutInformation out = new CheckoutInformation()
     out.gitCommit = vars.GIT_COMMIT
     out.gitPreviousCommit = vars.GIT_PREVIOUS_COMMIT
@@ -132,7 +138,12 @@ CheckoutInformation checkoutProject() {
     return out
 }
 
-void configureMavenSettingsFile() {
+void configureMavenSettingsFile(boolean quiet = false) {
+
+    if (!quiet) {
+        echo("Installing Maven settings file")
+    }
+
     final String file = 'settings.xml'
 
     // writeFile always evaluates the path relative to the workspace, even if given absolute path.
