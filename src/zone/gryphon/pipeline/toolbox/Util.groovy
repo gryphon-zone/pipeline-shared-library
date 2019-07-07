@@ -120,21 +120,26 @@ JobInformation getJobInformation() {
 }
 
 CheckoutInformation checkoutProject() {
+    final String unknown = 'unknown'
+
     def vars = checkout scm
 
-    echo("Raw SCM information: ${vars}")
-
     CheckoutInformation out = new CheckoutInformation()
-    out.gitCommit = vars.GIT_COMMIT
-    out.gitPreviousCommit = vars.GIT_PREVIOUS_COMMIT
-    out.gitPreviousSuccessfulCommit = vars.GIT_PREVIOUS_SUCCESSFUL_COMMIT
-    out.gitBranch = vars.GIT_BRANCH
-    out.gitLocalBranch = vars.GIT_LOCAL_BRANCH
-    out.gitUrl = vars.GIT_URL
-    out.gitCommitterName = vars.GIT_COMMITTER_NAME
-    out.gitAuthorName = vars.GIT_AUTHOR_NAME
-    out.gitCommitterEmail = vars.GIT_COMMITTER_EMAIL
-    out.gitAuthorEmail = vars.GIT_AUTHOR_EMAIL
+
+    out.gitBranch = vars.GIT_BRANCH ?: unknown
+    out.gitCommit = vars.GIT_COMMIT ?: unknown
+    out.gitPreviousCommit = vars.GIT_PREVIOUS_COMMIT ?: unknown
+    out.gitPreviousSuccessfulCommit = vars.GIT_PREVIOUS_SUCCESSFUL_COMMIT ?: unknown
+    out.gitUrl = vars.GIT_URL ?: unknown
+
+    // although the documentation says all of these should be set, in practice only the above variables are populated
+    // TODO see if there's a configuration option to have these populated
+    out.gitLocalBranch = vars.GIT_LOCAL_BRANCH ?: unknown
+    out.gitCommitterName = vars.GIT_COMMITTER_NAME ?: unknown
+    out.gitAuthorName = vars.GIT_AUTHOR_NAME ?: unknown
+    out.gitCommitterEmail = vars.GIT_COMMITTER_EMAIL ?: unknown
+    out.gitAuthorEmail = vars.GIT_AUTHOR_EMAIL ?: unknown
+
     return out
 }
 
