@@ -226,7 +226,6 @@ def call(String githubOrganization, Closure body) {
 
                         // TODO: dynamically generate cache location
                         String dockerArgs = """\
-                            -v /var/run/docker.sock:/var/run/docker.sock 
                             -v jenkins-shared-m2-cache:'/root/.m2/repository'
                             """.stripIndent().replace("\r\n", "")
 
