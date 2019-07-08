@@ -44,13 +44,12 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
 }
 
 
-String toPrintableForm(List properties) {
+static String toPrintableForm(List properties) {
     final String indent = ' ' * 4
     List out = []
 
+    out.add('[')
     properties.each { property ->
-
-        echo "${property}"
 
         // special handling to unwrap parameters property
         if ("${property.symbol}" == 'parameters') {
@@ -66,6 +65,7 @@ String toPrintableForm(List properties) {
             out.add("${indent}${property}")
         }
     }
+    out.add(']')
 
     return String.join("\n", out).replace('<anonymous>=', '')
 }
