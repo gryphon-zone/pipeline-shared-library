@@ -53,6 +53,10 @@ String toPrintableForm(List properties) {
         echo "${property.symbol}"
         echo ""
 
+        if ("${property.symbol}" == "parameters") {
+            echo "${property.properties}"
+        }
+
         out.add("${property}")
     }
 
