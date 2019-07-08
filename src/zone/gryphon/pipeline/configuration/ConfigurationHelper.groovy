@@ -51,9 +51,10 @@ static String toPrintableForm(List properties) {
 
     int propertyCount = properties.size()
     properties.eachWithIndex { property, propertyIndex ->
+        final String symbol = "${property.symbol}"
 
         // special handling to unwrap parameters property
-        if ("${property.symbol}" == 'parameters') {
+        if (symbol == 'parameters') {
             out.add("${indent}@parameters([")
             property.arguments.values().eachWithIndex { parameters, parametersIndex ->
                 int size = parameters.size()
@@ -63,6 +64,7 @@ static String toPrintableForm(List properties) {
             }
             out.add("${indent}])")
         } else {
+            // other properties are handled as normal
             out.add("${indent}${property}")
         }
 
