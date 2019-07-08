@@ -190,16 +190,17 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
     //noinspection GroovyAssignabilityCheck
     properties(calculatedJobProperties)
 
-    parsedConfiguration.performRelease = deployable && config.automaticallyRelease
     parsedConfiguration.buildAgent = config.buildAgent
     parsedConfiguration.timeoutMinutes = config.timeoutMinutes
 
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
         parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
+        parsedConfiguration.performRelease = deployable && "${config.automaticallyRelease}".trim().toBoolean()
     } else {
         // manual build, use the values passed in the parameters
         parsedConfiguration.mavenArguments = "${params.mavenArguments}"
+        parsedConfiguration.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
     return parsedConfiguration
