@@ -54,11 +54,14 @@ String toPrintableForm(List properties) {
 
         // special handling to unwrap parameters property
         if ("${property.symbol}" == 'parameters') {
-            property.arguments.values().each { parameters ->
-                parameters.each { parameter ->
-                    echo "parameter: ${parameter}"
+            out.add("${indent}@parameters([")
+            property.arguments.values().eachWithIndex { parameters, parametersIndex ->
+                int size = parameters.size()
+                parameters.eachWithIndex { parameter, index ->
+                    out.add("${indent}${indent}${parameter}${index == size - 1 ? '' : ','}")
                 }
             }
+            out.add("${indent}])")
         } else {
             out.add("${indent}${property}")
         }
