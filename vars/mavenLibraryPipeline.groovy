@@ -203,7 +203,7 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         parsedConfiguration.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
-    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
+    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "    ${prop}".replace('<anonymous>=', '') })
 
     echo("""\
         ${'-' * 60}
@@ -214,7 +214,7 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         Perform Maven release: ${parsedConfiguration.performRelease}
         """.stripIndent()
             .trim()
-            .concat("Job Properties:\n${propertiesToString}\n")
+            .concat("\nJob Properties:\n${propertiesToString}\n")
             .concat('-' * 60))
 
     return parsedConfiguration
