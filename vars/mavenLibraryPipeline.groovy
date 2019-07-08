@@ -203,6 +203,16 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         parsedConfiguration.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
+    echo("""\
+        ${'-' * 60}
+        Effective configuration:
+        ${'-' * 40}
+        Build agent: ${parsedConfiguration.buildAgent}
+        Maven arguments: ${parsedConfiguration.mavenArguments}
+        Perform Maven release: ${parsedConfiguration.performRelease}
+        ${'-' * 60}
+        """.stripIndent().trim())
+
     return parsedConfiguration
 }
 
