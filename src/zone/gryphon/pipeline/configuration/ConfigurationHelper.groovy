@@ -50,7 +50,7 @@ String toPrintableForm(List properties) {
 
     properties.each { property ->
         echo "${property}"
-        echo "${property.class.simpleName}"
+        echo "${property.symbol}"
         echo ""
 
         out.add("${property}")
