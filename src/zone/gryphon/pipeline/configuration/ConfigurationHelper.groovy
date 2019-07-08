@@ -43,3 +43,37 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
     return props
 }
 
+
+static String toPrintableForm(List properties) {
+    final String indent = ' ' * 4
+    List out = []
+    out.add('[')
+
+    int propertyCount = properties.size()
+    properties.eachWithIndex { property, propertyIndex ->
+        final String symbol = "${property.symbol}"
+
+        // special handling to unwrap parameters property
+        if (symbol == 'parameters') {
+            out.add("${indent}@parameters([")
+            property.arguments.values().eachWithIndex { parameters, parametersIndex ->
+                int size = parameters.size()
+                parameters.eachWithIndex { parameter, index ->
+                    out.add("${indent}${indent}${parameter}${index == size - 1 ? '' : ','}")
+                }
+            }
+            out.add("${indent}])")
+        } else {
+            // other properties are handled as normal
+            out.add("${indent}${property}")
+        }
+
+        if (propertyIndex < propertyCount - 1) {
+            out[-1] = "${out[-1]},"
+        }
+    }
+    out.add(']')
+
+    return String.join("\n", out).replace('<anonymous>=', '')
+}
+
