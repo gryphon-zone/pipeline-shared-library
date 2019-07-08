@@ -96,34 +96,27 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     final JobInformation info = util.getJobInformation()
     boolean abort = false
     CheckoutInformation checkoutInformation
+    String version
+    String mavenOpts
 
     stage('Checkout Project') {
+
+        // enable git color before performing checkout
         util.enableGitColor()
 
         checkoutInformation = util.checkoutProject()
-
-        // needed to prevent failures when attempting to make commits
-        util.sh("""\
-            git config user.email '${checkoutInformation.gitAuthorEmail}' && \
-            git config user.name '${checkoutInformation.gitAuthorName}'
-            """.stripIndent())
     }
 
-    // set up global maven settings
-    util.configureMavenSettingsFile()
+    stage('Configure Project') {
 
-    echo('Calculating \'$MAVEN_OPTS\' variable')
-    final String mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+        // generates version tag in the form <pom>.<build>-<commit>
+        // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
+        // NOTE: if there is no maven pom present, `readMavenVersion()` returns "1"
+        echo('Calculating build version')
+        version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
-    // generates version tag in the form <pom>.<build>-<commit>
-    // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
-    echo('Calculating build version')
-    final String version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
-
-    currentBuild.displayName = "${version} (#${info.build})"
-    currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
-
-    stage('Maven Build') {
+        currentBuild.displayName = "${version} (#${info.build})"
+        currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
 
         echo('Ensuring maven POM exists')
         if (!fileExists('pom.xml')) {
@@ -134,16 +127,40 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
             return
         }
 
-        performBuild(config, util, mavenOpts)
+        // needed to prevent failures when attempting to make commits
+        echo('Configuring git')
+        util.sh("""\
+            git config user.email '${checkoutInformation.gitAuthorEmail}' && \
+            git config user.name '${checkoutInformation.gitAuthorName}'
+            """.stripIndent().trim(), returnType: 'none')
+
+        // set up global maven settings
+        util.configureMavenSettingsFile()
+
+        echo('Calculating \'$MAVEN_OPTS\' variable')
+        mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
     }
 
     if (abort) {
         return
     }
 
+    stage('Maven Dependency Logging') {
+        try {
+            util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
+        } catch(Exception e) {
+            echo("Faield to calculate project dependencies: ${e}")
+            currentBuild.result = 'UNSTABLE'
+        }
+    }
+
+    stage('Maven Build') {
+        performBuild(config, util, mavenOpts)
+    }
+
     if (config.performRelease) {
         stage('Maven release') {
-            // note: maven arguments for release aren't configurable
+            // note: maven arguments for release intentionally aren't configurable
             performRelease(util, version, mavenOpts)
         }
     }
