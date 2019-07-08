@@ -56,7 +56,7 @@ String toPrintableForm(List properties) {
             echo "property.properties['arguments'].values(): ${property.properties['arguments'].values()}"
 
             echo ""
-            echo "property.arguments: ${property.arguments}"
+            echo "property.arguments.values(): ${property.arguments.values()}"
         }
 
         out.add("${property}")
