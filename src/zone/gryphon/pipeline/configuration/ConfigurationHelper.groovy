@@ -45,10 +45,15 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
 
 
 String toPrintableForm(List properties) {
-    String out = ''
+    final String indent = ' ' * 4
+    List out = []
 
-    properties.collect { prop -> "    ${prop}".replace('<anonymous>=', '') }
+    properties.each { property ->
+        echo "${property}"
 
-    return out
+        out.add("${property}")
+    }
+
+    return String.join("\n", out).replace('<anonymous>=', '')
 }
 
