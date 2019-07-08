@@ -169,7 +169,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
     final Util util = new Util()
 
-    final ParsedMavenLibraryPipelineConfiguration parsedConfiguration = new ParsedMavenLibraryPipelineConfiguration()
+    final ParsedMavenLibraryPipelineConfiguration finalConfig = new ParsedMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
     final JobInformation info = util.getJobInformation()
 
@@ -207,34 +207,32 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
     //noinspection GroovyAssignabilityCheck
     properties(calculatedJobProperties)
 
-    parsedConfiguration.buildAgent = config.buildAgent
-    parsedConfiguration.timeoutMinutes = config.timeoutMinutes
+    finalConfig.buildAgent = config.buildAgent
+    finalConfig.timeoutMinutes = config.timeoutMinutes
 
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
-        parsedConfiguration.mavenArguments = parsedConfiguration.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
-        parsedConfiguration.performRelease = deployable && "${config.automaticallyRelease}".trim().toBoolean()
+        finalConfig.mavenArguments = finalConfig.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
+        finalConfig.performRelease = deployable && "${config.automaticallyRelease}".trim().toBoolean()
     } else {
         // manual build, use the values passed in the parameters
-        parsedConfiguration.mavenArguments = "${params.mavenArguments}"
-        parsedConfiguration.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
+        finalConfig.mavenArguments = "${params.mavenArguments}"
+        finalConfig.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
-
-    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "    ${prop}".replace('<anonymous>=', '') })
 
     echo("""\
         ${'-' * 60}
         Effective configuration:
         ------------------------
-        Docker build agent:    ${parsedConfiguration.buildAgent}
-        Maven build arguments: ${parsedConfiguration.mavenArguments}
-        Perform Maven release: ${parsedConfiguration.performRelease}
+        Docker build agent:    ${finalConfig.buildAgent}
+        Maven build arguments: ${finalConfig.mavenArguments}
+        Perform Maven release: ${finalConfig.performRelease}
         """.stripIndent()
             .trim()
-            .concat("\nJob Properties:\n${propertiesToString}\n")
+            .concat("\nJob Properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
             .concat('-' * 60))
 
-    return parsedConfiguration
+    return finalConfig
 }
 
 def call(String githubOrganization, Closure body) {

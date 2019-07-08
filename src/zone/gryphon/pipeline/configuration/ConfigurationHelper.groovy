@@ -43,3 +43,12 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
     return props
 }
 
+
+String toPrintableForm(List properties) {
+    String out = ''
+
+    properties.collect { prop -> "    ${prop}".replace('<anonymous>=', '') }
+
+    return out
+}
+
