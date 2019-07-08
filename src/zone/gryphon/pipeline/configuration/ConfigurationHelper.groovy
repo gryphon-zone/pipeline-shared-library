@@ -53,12 +53,12 @@ String toPrintableForm(List properties) {
         if ("${property.symbol}" == "parameters") {
             echo "${property.symbol}"
 
-            property.arguments.values().each { val ->
-                echo "val: ${val}"
+            property.arguments.values().each { parameters ->
+                parameters.each { parameter ->
+                    echo "parameter: ${parameter}"
+                }
             }
         }
-
-        out.add("${property}")
     }
 
     return String.join("\n", out).replace('<anonymous>=', '')
