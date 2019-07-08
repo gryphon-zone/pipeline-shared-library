@@ -203,15 +203,19 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         parsedConfiguration.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
+    String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
+
     echo("""\
         ${'-' * 60}
         Effective configuration:
-        ${'-' * 40}
-        Build agent: ${parsedConfiguration.buildAgent}
-        Maven arguments: ${parsedConfiguration.mavenArguments}
+        ------------------------
+        Docker build agent:    ${parsedConfiguration.buildAgent}
+        Maven build arguments: ${parsedConfiguration.mavenArguments}
         Perform Maven release: ${parsedConfiguration.performRelease}
-        ${'-' * 60}
-        """.stripIndent().trim())
+        """.stripIndent()
+            .trim()
+            .concat("Job Properties:\n${propertiesToString}\n")
+            .concat('-' * 60))
 
     return parsedConfiguration
 }
