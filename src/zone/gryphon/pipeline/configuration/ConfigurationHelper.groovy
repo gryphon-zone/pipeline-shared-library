@@ -50,14 +50,17 @@ String toPrintableForm(List properties) {
 
     properties.each { property ->
 
-        if ("${property.symbol}" == "parameters") {
-            echo "${property.symbol}"
+        echo "${property}"
 
+        // special handling to unwrap parameters property
+        if ("${property.symbol}" == 'parameters') {
             property.arguments.values().each { parameters ->
                 parameters.each { parameter ->
                     echo "parameter: ${parameter}"
                 }
             }
+        } else {
+            out.add("${indent}${property}")
         }
     }
 
