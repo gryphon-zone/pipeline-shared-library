@@ -229,7 +229,7 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         Perform Maven release: ${finalConfig.performRelease}
         """.stripIndent()
             .trim()
-            .concat("\nJob Properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
+            .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
             .concat('-' * 60))
 
     return finalConfig

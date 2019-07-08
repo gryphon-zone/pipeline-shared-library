@@ -148,8 +148,6 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
-                        String propertiesToString = String.join("\n", calculatedJobProperties.collect { prop -> "\t${prop}".replace('<anonymous>=', '') })
-
                         echo """\
                         ${'#' * 120}
                         ${'#' * 120}
@@ -162,7 +160,7 @@ def call(String githubOrganization, Closure body) {
                         Docker build arguments: ${buildArgs}
                         Docker build context: ${buildContext}
                         """.stripIndent()
-                                .concat("Job Properties:\n${propertiesToString}\n")
+                                .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
                                 .concat('#' * 120).concat('\n')
                                 .concat('#' * 120).concat('\n')
 
