@@ -51,12 +51,11 @@ String toPrintableForm(List properties) {
     properties.each { property ->
 
         if ("${property.symbol}" == "parameters") {
-            echo "${property}"
+            echo "${property.symbol}"
 
-            echo "property.properties['arguments'].values(): ${property.properties['arguments'].values()}"
-
-            echo ""
-            echo "property.arguments.values(): ${property.arguments.values()}"
+            property.arguments.values().each { val ->
+                echo "val: ${val}"
+            }
         }
 
         out.add("${property}")
