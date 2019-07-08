@@ -48,8 +48,8 @@ static String toPrintableForm(List properties) {
     final String indent = ' ' * 4
     List out = []
 
-    out.add('[')
-    properties.each { property ->
+    int propertyCount = properties.size()
+    properties.eachWithIndex { property, propertyIndex ->
 
         // special handling to unwrap parameters property
         if ("${property.symbol}" == 'parameters') {
@@ -64,8 +64,11 @@ static String toPrintableForm(List properties) {
         } else {
             out.add("${indent}${property}")
         }
+
+        if (propertyIndex < propertyCount - 1) {
+            out[-1] = "${out[-1]},"
+        }
     }
-    out.add(']')
 
     return String.join("\n", out).replace('<anonymous>=', '')
 }
