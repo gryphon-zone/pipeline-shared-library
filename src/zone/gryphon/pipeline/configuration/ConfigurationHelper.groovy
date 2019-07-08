@@ -47,6 +47,7 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
 static String toPrintableForm(List properties) {
     final String indent = ' ' * 4
     List out = []
+    out.add('[')
 
     int propertyCount = properties.size()
     properties.eachWithIndex { property, propertyIndex ->
@@ -69,6 +70,7 @@ static String toPrintableForm(List properties) {
             out[-1] = "${out[-1]},"
         }
     }
+    out.add(']')
 
     return String.join("\n", out).replace('<anonymous>=', '')
 }
