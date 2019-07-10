@@ -20,6 +20,7 @@ import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtility
 import zone.gryphon.pipeline.toolbox.ScopeUtility
+import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
@@ -37,6 +38,7 @@ def call(String githubOrganization, Closure body) {
             // no build is allowed to run for more than 60 minutes
             scope.withAbsoluteTimeout(60) {
 
+                final TextColor c = TextColor.instance
                 final Util util = new Util()
                 final DockerUtility dockerUtilities = new DockerUtility()
                 final ConfigurationHelper helper = new ConfigurationHelper()
@@ -149,10 +151,9 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
                         echo """\
-                        ${'#' * 120}
-                        ${'#' * 120}
+                        ${c.cyan('-' * 60)}
                         Calculated Configuration:
-                        -------------------------
+                        ${c.cyan('-------------------------')}
                         Github Organization: ${githubOrganization}
                         Dockerhub Organization: ${dockerOrganization}
                         Dockerhub Repository: ${artifact}
@@ -161,8 +162,7 @@ def call(String githubOrganization, Closure body) {
                         Docker build context: ${buildContext}
                         """.stripIndent()
                                 .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
-                                .concat('#' * 120).concat('\n')
-                                .concat('#' * 120).concat('\n')
+                                .concat(c.cyan('-' * 60))
 
                         String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 

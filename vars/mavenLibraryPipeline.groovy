@@ -19,6 +19,7 @@ import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConf
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
+import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 /**
@@ -168,6 +169,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 
 ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
     final Util util = new Util()
+    final TextColor c = TextColor.instance
 
     final ParsedMavenLibraryPipelineConfiguration finalConfig = new ParsedMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
@@ -221,16 +223,16 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
     }
 
     echo("""\
-        ${'-' * 60}
+        ${c.cyan('-' * 60)}
         Effective configuration:
-        ------------------------
+        ${c.cyan('------------------------')}
         Docker build agent:    ${finalConfig.buildAgent}
         Maven build arguments: ${finalConfig.mavenArguments}
         Perform Maven release: ${finalConfig.performRelease}
         """.stripIndent()
             .trim()
             .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
-            .concat('-' * 60))
+            .concat(c.cyan('-' * 60)))
 
     return finalConfig
 }
