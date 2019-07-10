@@ -222,8 +222,8 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         finalConfig.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
-    echo("""\
-        ${c.cyan('-' * 60)}
+    echo(c.cyan('-' * 60) +
+        """\
         Effective configuration:
         ${c.cyan('------------------------')}
         Docker build agent:    ${finalConfig.buildAgent}

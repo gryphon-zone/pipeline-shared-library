@@ -150,8 +150,8 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
-                        echo """\
-                        ${c.cyan('-' * 60)}
+                        echo c.cyan('-' * 60) +
+                        """\
                         Calculated Configuration:
                         ${c.cyan('-------------------------')}
                         Github Organization: ${githubOrganization}
