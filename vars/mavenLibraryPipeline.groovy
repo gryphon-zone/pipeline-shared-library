@@ -224,13 +224,13 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
 
     String configurationMessage = ''
     configurationMessage += c.cyan('-' * 60) + '\n'
-    configurationMessage += c.green('Effective Configuration:') + '\n'
+    configurationMessage += c.cyan('Effective Configuration:') + '\n'
     configurationMessage += c.cyan('-----------------------') + '\n'
-    configurationMessage += c.green('Docker build agent:     ') + finalConfig.buildAgent + '\n'
-    configurationMessage += c.green('Maven build arguments:  ') + finalConfig.mavenArguments + '\n'
-    configurationMessage += c.green('Perform Maven release:  ') + finalConfig.performRelease + '\n'
+    configurationMessage += c.green('Docker build agent:     ') + c.blue(String.valueOf(finalConfig.buildAgent)) + '\n'
+    configurationMessage += c.green('Maven build arguments:  ') + c.blue(String.valueOf(finalConfig.mavenArguments)) + '\n'
+    configurationMessage += c.green('Perform Maven release:  ') + c.blue(String.valueOf(finalConfig.performRelease)) + '\n'
     configurationMessage += c.green('Job properties:         ') + '\n'
-    configurationMessage += helper.toPrintableForm(calculatedJobProperties) + '\n'
+    configurationMessage += helper.toPrintableForm(calculatedJobProperties).split("\n").collect {c.blue(it)}.join("\n") + '\n'
     configurationMessage += c.cyan('-' * 60) + '\n'
 
     echo(configurationMessage)
