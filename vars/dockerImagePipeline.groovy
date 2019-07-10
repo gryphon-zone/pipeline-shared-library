@@ -150,17 +150,16 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
-
                         String configurationMessage = ''
                         configurationMessage += c.cyan('-' * 60) + '\n'
                         configurationMessage += c.cyan('Effective Configuration:') + '\n'
                         configurationMessage += c.cyan('----------------------- ') + '\n'
-                        configurationMessage += c.green('Github Organization:    ') + c.blue(String.valueOf(githubOrganization)) + '\n'
+                        configurationMessage += c.green('Github Organization   : ') + c.blue(String.valueOf(githubOrganization)) + '\n'
                         configurationMessage += c.green('Dockerhub Organization: ') + c.blue(String.valueOf(dockerOrganization)) + '\n'
-                        configurationMessage += c.green('Dockerhub Repository:   ') + c.blue(String.valueOf(artifact)) + '\n'
-                        configurationMessage += c.green('Docker Image Tags:      ') + c.blue(String.valueOf(tags)) + '\n'
+                        configurationMessage += c.green('Dockerhub Repository  : ') + c.blue(String.valueOf(artifact)) + '\n'
                         configurationMessage += c.green('Docker build arguments: ') + c.blue(String.valueOf(buildArgs)) + '\n'
-                        configurationMessage += c.green('Docker build context:   ') + c.blue(String.valueOf(buildContext)) + '\n'
+                        configurationMessage += c.green('Docker build context  : ') + c.blue(String.valueOf(buildContext)) + '\n'
+                        configurationMessage += c.green('Docker Image Tags     : ') + c.blue(String.valueOf(tags)) + '\n'
                         configurationMessage += c.green('Job properties:         ') + '\n'
                         configurationMessage += helper.toPrintableForm(calculatedJobProperties).split("\n").collect {c.blue(it)}.join("\n") + '\n'
                         configurationMessage += c.cyan('-' * 60) + '\n'
