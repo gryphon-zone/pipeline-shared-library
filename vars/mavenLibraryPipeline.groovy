@@ -149,7 +149,7 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     stage('Maven Dependency Logging') {
         try {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
-        } catch(Exception e) {
+        } catch (Exception e) {
             echo("Faield to calculate project dependencies: ${e}")
             currentBuild.result = 'UNSTABLE'
         }
@@ -222,17 +222,18 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         finalConfig.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
-    echo(c.cyan('-' * 60) +
-        """\
-        Effective configuration:
-        ${c.cyan('------------------------')}
-        Docker build agent:    ${finalConfig.buildAgent}
-        Maven build arguments: ${finalConfig.mavenArguments}
-        Perform Maven release: ${finalConfig.performRelease}
-        """.stripIndent()
-            .trim()
-            .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
-            .concat(c.cyan('-' * 60)))
+    String configurationMessage = ''
+    configurationMessage += c.cyan('-' * 60) + '\n'
+    configurationMessage += c.green('Effective Configuration:') + '\n'
+    configurationMessage += c.cyan('-----------------------') + '\n'
+    configurationMessage += c.green('Docker build agent:     ') + finalConfig.buildAgent + '\n'
+    configurationMessage += c.green('Maven build arguments:  ') + finalConfig.mavenArguments + '\n'
+    configurationMessage += c.green('Perform Maven release:  ') + finalConfig.performRelease + '\n'
+    configurationMessage += c.green('Job properties:         ') + '\n'
+    configurationMessage += helper.toPrintableForm(calculatedJobProperties) + '\n'
+    configurationMessage += c.cyan('-' * 60) + '\n'
+
+    echo(configurationMessage)
 
     return finalConfig
 }

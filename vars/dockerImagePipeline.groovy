@@ -150,19 +150,22 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
-                        echo c.cyan('-' * 60) +
-                        """\
-                        Calculated Configuration:
-                        ${c.cyan('-------------------------')}
-                        Github Organization: ${githubOrganization}
-                        Dockerhub Organization: ${dockerOrganization}
-                        Dockerhub Repository: ${artifact}
-                        Docker Image Tags: ${tags}
-                        Docker build arguments: ${buildArgs}
-                        Docker build context: ${buildContext}
-                        """.stripIndent()
-                                .concat("\nJob properties:\n${helper.toPrintableForm(calculatedJobProperties)}\n")
-                                .concat(c.cyan('-' * 60))
+
+                        String configurationMessage = ''
+                        configurationMessage += c.cyan('-' * 60) + '\n'
+                        configurationMessage += c.green('Effective Configuration:') + '\n'
+                        configurationMessage += c.cyan('----------------------- ') + '\n'
+                        configurationMessage += c.green('Github Organization:    ') + githubOrganization + '\n'
+                        configurationMessage += c.green('Dockerhub Organization: ') + dockerOrganization + '\n'
+                        configurationMessage += c.green('Dockerhub Repository:   ') + artifact + '\n'
+                        configurationMessage += c.green('Docker Image Tags:      ') + tags + '\n'
+                        configurationMessage += c.green('Docker build arguments: ') + buildArgs + '\n'
+                        configurationMessage += c.green('Docker build context:   ') + buildContext + '\n'
+                        configurationMessage += c.green('Job properties:         ') + '\n'
+                        configurationMessage += helper.toPrintableForm(calculatedJobProperties) + '\n'
+                        configurationMessage += c.cyan('-' * 60) + '\n'
+
+                        echo(configurationMessage)
 
                         String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
 
@@ -200,7 +203,7 @@ def call(String githubOrganization, Closure body) {
                                         } finally {
                                             try {
                                                 util.sh("docker logout", quiet: true)
-                                            } catch(Exception e) {
+                                            } catch (Exception e) {
                                                 echo "WARNING: failed to log out of docker. ${e.class.simpleName}: ${e.message}"
                                             }
 
