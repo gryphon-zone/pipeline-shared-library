@@ -39,9 +39,7 @@
                     <checksumPolicy>fail</checksumPolicy>
                 </releases>
                 <snapshots>
-                    <enabled>true</enabled>
-                    <updatePolicy>daily</updatePolicy>
-                    <checksumPolicy>fail</checksumPolicy>
+                    <enabled>false</enabled>
                 </snapshots>
                 <id>ossrh</id>
                 <name>Sonatype OSS Repository Hosting</name>
@@ -54,9 +52,7 @@
                     <checksumPolicy>fail</checksumPolicy>
                 </releases>
                 <snapshots>
-                    <enabled>true</enabled>
-                    <updatePolicy>daily</updatePolicy>
-                    <checksumPolicy>fail</checksumPolicy>
+                    <enabled>false</enabled>
                 </snapshots>
                 <id>jenkins</id>
                 <name>Jenkins CI Hosting</name>
