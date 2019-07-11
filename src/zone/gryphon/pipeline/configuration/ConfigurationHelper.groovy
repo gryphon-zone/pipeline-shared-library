@@ -79,7 +79,7 @@ void printConfiguration(Map effectiveConfiguration) {
         int paddingLength = maxKeyLength - key.length()
         String padding = paddingLength > 0 ? (' ' * paddingLength) : ''
 
-        configurationMessage += c.green(key + padding + ':') + c.blue(value) + '\n'
+        configurationMessage += c.green(key + padding + ':') + ' ' + c.blue(value) + '\n'
     }
 
     for (String key : sortedMultiLineKeys) {
