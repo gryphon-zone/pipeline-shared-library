@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.MavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
-import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 /**
@@ -169,7 +169,6 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 
 ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
     final Util util = new Util()
-    final TextColor c = TextColor.instance
 
     final ParsedMavenLibraryPipelineConfiguration finalConfig = new ParsedMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
@@ -223,11 +222,15 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
     }
 
     helper.printConfiguration([
-            'Github Organization'  : githubOrganization,
-            'Docker build agent'   : finalConfig.buildAgent,
-            'Maven build arguments': finalConfig.mavenArguments,
-            'Perform Maven release': finalConfig.performRelease,
-            'Job properties'       : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
+            'Deployable branch regex': config.deployableBranchRegex,
+            'Github organization'    : info.organization,
+            'Github project'         : info.repository,
+            'Git branch'             : info.branch,
+            'Job is deployable'      : deployable,
+            'Docker build agent'     : finalConfig.buildAgent,
+            'Maven build arguments'  : finalConfig.mavenArguments,
+            'Perform Maven release'  : finalConfig.performRelease,
+            'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
     return finalConfig
