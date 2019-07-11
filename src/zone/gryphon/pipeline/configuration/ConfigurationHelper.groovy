@@ -56,7 +56,7 @@ void printConfiguration(Map effectiveConfiguration) {
         String key = String.valueOf(entry.getKey())
         String value = String.valueOf(entry.getValue())
 
-        if (value.concat('\n')) {
+        if (value.contains('\n')) {
             multiLineEntries.put(key, value)
         } else {
             maxKeyLength = Math.max(maxKeyLength, key.length())
@@ -84,7 +84,7 @@ void printConfiguration(Map effectiveConfiguration) {
 
     for (String key : sortedMultiLineKeys) {
         String value = multiLineEntries.get(key)
-        configurationMessage += c.green(key + ':\n')
+        configurationMessage += c.green(key + ':') + '\n'
         configurationMessage += value.split("\n").collect {c.blue(it)}.join("\n") + '\n'
     }
 
