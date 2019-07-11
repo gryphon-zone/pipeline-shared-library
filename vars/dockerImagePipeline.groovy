@@ -151,13 +151,18 @@ def call(String githubOrganization, Closure body) {
                         currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
 
                         helper.printConfiguration([
-                                'Github Organization'   : githubOrganization,
-                                'Dockerhub Organization': dockerOrganization,
-                                'Dockerhub Repository'  : artifact,
-                                'Docker build arguments': buildArgs,
-                                'Docker build context'  : buildContext,
-                                'Docker Image Tags'     : tags,
-                                'Job properties'        : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
+                                'Deployable branches'    : config.deployableBranchRegex,
+                                'Deployable organization': githubOrganization,
+                                'SCM organization'       : info.organization,
+                                'SCM repository'         : info.repository,
+                                'SCM branch'             : info.branch,
+                                'Job is deployable'      : deployable,
+                                'Dockerhub organization' : dockerOrganization,
+                                'Dockerhub repository'   : artifact,
+                                'Docker build arguments' : buildArgs,
+                                'Docker build context'   : buildContext,
+                                'Docker image tags'      : String.join(', ', tags),
+                                'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
                         ])
 
                         String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())

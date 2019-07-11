@@ -225,12 +225,12 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
             'Deployable branches'    : config.deployableBranchRegex,
             'Deployable organization': githubOrganization,
             'SCM organization'       : info.organization,
-            'SCM project'            : info.repository,
+            'SCM repository'         : info.repository,
             'SCM branch'             : info.branch,
             'Job is deployable'      : deployable,
             'Docker build image'     : finalConfig.buildAgent,
             'Maven build arguments'  : finalConfig.mavenArguments,
-            'Maven release requested': finalConfig.performRelease,
+            'Perform Maven release'  : finalConfig.performRelease,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
