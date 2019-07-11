@@ -222,15 +222,16 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
     }
 
     helper.printConfiguration([
-            'Deployable branch regex' : config.deployableBranchRegex,
-            'SCM organization'        : info.organization,
-            'SCM project'             : info.repository,
-            'SCM branch'              : info.branch,
-            'Job is deployable'       : deployable,
-            'Build agent Docker image': finalConfig.buildAgent,
-            'Maven build arguments'   : finalConfig.mavenArguments,
-            'Perform Maven release'   : finalConfig.performRelease,
-            'Job properties'          : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
+            'Deployable branches'    : config.deployableBranchRegex,
+            'Deployable organization': githubOrganization,
+            'SCM organization'       : info.organization,
+            'SCM project'            : info.repository,
+            'SCM branch'             : info.branch,
+            'Job is deployable'      : deployable,
+            'Docker build image'     : finalConfig.buildAgent,
+            'Maven build arguments'  : finalConfig.mavenArguments,
+            'Maven release requested': finalConfig.performRelease,
+            'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
     return finalConfig
