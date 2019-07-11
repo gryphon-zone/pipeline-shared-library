@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.MavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
-import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 /**
@@ -169,7 +169,6 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
 
 ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
     final Util util = new Util()
-    final TextColor c = TextColor.instance
 
     final ParsedMavenLibraryPipelineConfiguration finalConfig = new ParsedMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
@@ -222,18 +221,18 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
         finalConfig.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
     }
 
-    String configurationMessage = ''
-    configurationMessage += c.cyan('-' * 60) + '\n'
-    configurationMessage += c.cyan('Effective Configuration:') + '\n'
-    configurationMessage += c.cyan('-----------------------') + '\n'
-    configurationMessage += c.green('Docker build agent   : ') + c.blue(String.valueOf(finalConfig.buildAgent)) + '\n'
-    configurationMessage += c.green('Maven build arguments: ') + c.blue(String.valueOf(finalConfig.mavenArguments)) + '\n'
-    configurationMessage += c.green('Perform Maven release: ') + c.blue(String.valueOf(finalConfig.performRelease)) + '\n'
-    configurationMessage += c.green('Job properties:        ') + '\n'
-    configurationMessage += helper.toPrintableForm(calculatedJobProperties).split("\n").collect {c.blue(it)}.join("\n") + '\n'
-    configurationMessage += c.cyan('-' * 60) + '\n'
-
-    echo(configurationMessage)
+    helper.printConfiguration([
+            'Deployable branches'    : config.deployableBranchRegex,
+            'Deployable organization': githubOrganization,
+            'SCM organization'       : info.organization,
+            'SCM repository'         : info.repository,
+            'SCM branch'             : info.branch,
+            'Job is deployable'      : deployable,
+            'Docker build image'     : finalConfig.buildAgent,
+            'Maven build arguments'  : finalConfig.mavenArguments,
+            'Perform Maven release'  : finalConfig.performRelease,
+            'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
+    ])
 
     return finalConfig
 }
