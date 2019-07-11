@@ -15,6 +15,8 @@
 
 package zone.gryphon.pipeline.configuration
 
+import zone.gryphon.pipeline.toolbox.TextColor
+
 
 def <T> T configure(Closure body, T config) {
     body.resolveStrategy = Closure.OWNER_FIRST
@@ -43,8 +45,61 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
     return props
 }
 
+void printConfiguration(Map effectiveConfiguration) {
+    Map<String, String> singleLineEntries = [:]
+    Map<String, String> multiLineEntries = [:]
 
-static String toPrintableForm(List properties) {
+    // maximum key length for single line key
+    int maxKeyLength = 0
+
+    for (Map.Entry entry : effectiveConfiguration.entrySet()) {
+        String key = String.valueOf(entry.getKey())
+        String value = String.valueOf(entry.getValue())
+
+        if (value.concat('\n')) {
+            multiLineEntries.put(key, value)
+        } else {
+            maxKeyLength = Math.max(maxKeyLength, key.length())
+            singleLineEntries.put(key, value)
+        }
+    }
+
+    final TextColor c = TextColor.instance
+    final List sortedSingleLineKeys = singleLineEntries.keySet().toSorted()
+    final List sortedMultiLineKeys = multiLineEntries.keySet().toSorted()
+
+    String configurationMessage = ''
+    configurationMessage += c.cyan('-' * 60) + '\n'
+    configurationMessage += c.cyan('Effective Configuration:') + '\n'
+    configurationMessage += c.cyan('----------------------- ') + '\n'
+
+    for (String key : sortedSingleLineKeys) {
+        String value = singleLineEntries.get(key)
+
+        int paddingLength = maxKeyLength - key.length()
+        String padding = paddingLength > 0 ? (' ' * paddingLength) : ''
+
+        configurationMessage += c.green(key + padding + ':') + c.blue(value) + '\n'
+    }
+
+    for (String key : sortedMultiLineKeys) {
+        String value = multiLineEntries.get(key)
+        configurationMessage += c.green(key + ':\n')
+        configurationMessage += value.split("\n").collect {c.blue(it)}.join("\n") + '\n'
+    }
+
+    configurationMessage += c.cyan('-' * 60) + '\n'
+
+    echo(configurationMessage)
+}
+
+
+/**
+ * Converts a list of Jenkins job properties into a printable string
+ * @param properties
+ * @return
+ */
+static String convertPropertiesToPrintableForm(List properties) {
     final String indent = ' ' * 4
     List out = []
     out.add('[')
