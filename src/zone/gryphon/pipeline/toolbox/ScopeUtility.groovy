@@ -79,6 +79,31 @@ def inDockerImage(Map map = [:], String dockerImage, Closure body) {
     }
 }
 
+def withDockerAuthentication(String credentialsId, Closure body) {
+    final Util util = new Util()
+    withCredentials([usernamePassword(credentialsId: credentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
+        try {
+            util.sh("echo \"${password}\" | docker login -u \"${username}\" --password-stdin", quiet: true)
+
+            return body()
+
+        } finally {
+
+            try {
+                util.sh("docker logout", quiet: true)
+            } catch (Exception e) {
+                echo("WARNING: failed to log out of docker. ${e.class.simpleName}: ${e.message}")
+            }
+
+            try {
+                util.sh("rm -f \"${HOME}/.docker/config.json\"", quiet: true)
+            } catch (Exception e) {
+                echo("WARNING: failed to remove docker credentials file. ${e.class.simpleName}: ${e.message}")
+            }
+        }
+    }
+}
+
 void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
         final Util util = new Util()

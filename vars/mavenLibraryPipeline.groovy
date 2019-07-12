@@ -16,7 +16,7 @@
 
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.MavenLibraryPipelineConfiguration
-import zone.gryphon.pipeline.configuration.parsed.ParsedMavenLibraryPipelineConfiguration
+import zone.gryphon.pipeline.configuration.effective.EffectiveMavenLibraryPipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
@@ -88,11 +88,11 @@ private def performRelease(final Util util, final String releaseVersion, final S
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
-private def performBuild(final ParsedMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
+private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
     util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
 }
 
-private def build(final ParsedMavenLibraryPipelineConfiguration config) {
+private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     final Util util = new Util()
     final JobInformation info = util.getJobInformation()
     boolean abort = false
@@ -167,10 +167,10 @@ private def build(final ParsedMavenLibraryPipelineConfiguration config) {
     }
 }
 
-ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
+EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
     final Util util = new Util()
 
-    final ParsedMavenLibraryPipelineConfiguration finalConfig = new ParsedMavenLibraryPipelineConfiguration()
+    final EffectiveMavenLibraryPipelineConfiguration finalConfig = new EffectiveMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
     final JobInformation info = util.getJobInformation()
 
@@ -228,7 +228,7 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
             'SCM repository'         : info.repository,
             'SCM branch'             : info.branch,
             'Job is deployable'      : deployable,
-            'Docker build image'     : finalConfig.buildAgent,
+            'Build agent'            : finalConfig.buildAgent,
             'Maven build arguments'  : finalConfig.mavenArguments,
             'Perform Maven release'  : finalConfig.performRelease,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
@@ -238,11 +238,8 @@ ParsedMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganiza
 }
 
 def call(String githubOrganization, Closure body) {
-
-    // only call outside of timestamp block is creation of ScopeUtility,
-    // all other calls in the pipeline should happen inside of the timestamp block
+    final EffectiveMavenLibraryPipelineConfiguration configuration
     final ScopeUtility scope = new ScopeUtility()
-    ParsedMavenLibraryPipelineConfiguration configuration
 
     // add support for ANSI color
     scope.withColor {
