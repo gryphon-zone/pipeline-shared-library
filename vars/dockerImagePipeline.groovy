@@ -16,214 +16,209 @@
 
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
+import zone.gryphon.pipeline.configuration.effective.EffectiveDockerImagePipelineConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtility
 import zone.gryphon.pipeline.toolbox.ScopeUtility
-import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
 
-def call(String githubOrganization, Closure body) {
+private EffectiveDockerImagePipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
+    final ConfigurationHelper helper = new ConfigurationHelper()
 
-    // only call outside of timestamp block is creation of ScopeUtility,
-    // all other calls in the pipeline should happen inside of the timestamp block
+    final DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+    final EffectiveDockerImagePipelineConfiguration out = new EffectiveDockerImagePipelineConfiguration()
+
+    final Util util = new Util()
+    final DockerUtility dockerUtilities = new DockerUtility()
+
+    final JobInformation info = util.getJobInformation()
+
+    // branch is deployable if it matches the regex AND it's not from a fork
+    boolean deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
+    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+    String artifact = config.dockerArtifact ?: info.repository
+
+    List buildParameters = [
+            string(
+                    defaultValue: config.buildArgs,
+                    description: 'Arguments to pass to the "docker build" command',
+                    name: 'buildArgs',
+                    trim: true
+            ),
+            string(
+                    defaultValue: config.buildContext,
+                    description: 'Build context to use for the "docker build" command',
+                    name: 'buildContext',
+                    trim: true
+            )
+    ]
+
+    if (deployable) {
+        buildParameters.add(
+                booleanParam(
+                        defaultValue: true,
+                        description: 'Whether or not to push the built Docker image',
+                        name: 'push'
+                )
+        )
+    }
+
+    List calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
+
+    // set job properties
+    //noinspection GroovyAssignabilityCheck
+    properties(calculatedJobProperties)
+
+    if (util.buildWasTriggerByCommit()) {
+        // SCM change triggered build, use the parameter definitions from the configuration
+        out.buildArgs = config.buildArgs
+        out.buildContext = config.buildContext
+        out.push = deployable && config.pushImage
+    } else {
+        // manual build, use the values passed in the parameters
+        out.buildArgs = "${params.buildArgs}"
+        out.buildContext = "${params.buildContext}"
+        out.push = deployable && "${params.push}".toBoolean()
+    }
+
+    out.image = "${dockerOrganization}/${artifact}"
+    out.buildAgent = config.buildAgent
+    out.baseVersion = config.version
+    out.timeoutMinutes = config.timeoutMinutes
+
+    // credentials may be configurable in the future
+    out.credentials = 'docker'
+
+    helper.printConfiguration([
+            'Job is deployable'      : deployable,
+            'Deployable organization': githubOrganization,
+            'Deployable branches'    : config.deployableBranchRegex,
+            'SCM organization'       : info.organization,
+            'SCM repository'         : info.repository,
+            'SCM branch'             : info.branch,
+            'Build agent'            : out.buildAgent,
+            'Docker image'           : out.image,
+            'Docker build arguments' : out.buildArgs,
+            'Docker build context'   : out.buildContext,
+            'Push built image'       : out.push,
+            'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
+    ])
+
+    return out
+}
+
+private void build(final EffectiveDockerImagePipelineConfiguration configuration) {
+    final CheckoutInformation checkoutInformation
+    final Util util = new Util()
+    final DockerUtility dockerUtilities = new DockerUtility()
+    final JobInformation info = util.getJobInformation()
+    final ScopeUtility scope = new ScopeUtility()
+    final List<String> tags = []
+    final String dockerImageName
+    def dockerImage
+
+    stage('Checkout Project') {
+        // enable git color before performing checkout
+        util.enableGitColor()
+
+        checkoutInformation = util.checkoutProject()
+    }
+
+    stage('Configure Project') {
+        String shortHash = Util.shortHash(checkoutInformation)
+
+        String branchTag = "${info.branch}-${shortHash}"
+
+        if (configuration.push) {
+            // if there's a version defined in the config, generate a "version.build-hash"
+            // tag for the image. This will typically look like 1.2.3-abcdef;
+            // otherwise, use the branch tag.
+            // This is to ensure we always have a unique tag for each image, since the
+            // "latest" tag will be overwritten by subsequent builds.
+            if (configuration.baseVersion) {
+                tags.add("${configuration.baseVersion}-${shortHash}")
+            } else {
+                tags.add(branchTag)
+            }
+
+            tags.add("latest")
+        } else {
+            // non-deployable branches always get tagged with the branch name,
+            // so it's obvious where they came from
+            tags.add(branchTag)
+        }
+
+        dockerImageName = dockerUtilities.tag(configuration.image, tags[0])
+
+        currentBuild.displayName = "${dockerImageName} (#${info.build})"
+        currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
+    }
+
+    stage('Docker Image Build') {
+
+        // build and tag image
+        dockerImage = docker.build(dockerImageName, "${configuration.buildArgs} ${configuration.buildContext}")
+        tags.each { tag -> dockerImage.tag(tag) }
+
+        // get the unique image ID
+        String dockerImageId = util.sh("docker images ${dockerImageName} --format '{{.ID}}' | head -n 1", quiet: true).trim()
+
+        // log the docker image data for all built tags
+        String patterns = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
+        String dockerImageMetadata = util.sh("""\
+            docker images '${configuration.image}' |\
+            grep -E 'REPOSITORY|${dockerImageId}' |\
+            grep -P '(^REPOSITORY\\s+|${patterns})'\
+            """, quiet: true).trim()
+
+        echo("Built the following images:\n${dockerImageMetadata}")
+    }
+
+    if (configuration.push) {
+        stage('Docker image Push') {
+            scope.withDockerAuthentication(configuration.credentials) {
+                tags.each { tag -> dockerImage.push(tag) }
+            }
+        }
+    }
+}
+
+def call(String githubOrganization, Closure body) {
+    final EffectiveDockerImagePipelineConfiguration configuration
     final ScopeUtility scope = new ScopeUtility()
 
-    scope.withTimestamps {
+    // add support for ANSI color
+    scope.withColor {
 
-        scope.withColor {
+        // add timestamps to build logs
+        scope.withTimestamps {
 
-            // no build is allowed to run for more than 60 minutes
+            // no build is allowed to run for more than 1 hour
             scope.withAbsoluteTimeout(60) {
 
-                final TextColor c = TextColor.instance
-                final Util util = new Util()
-                final DockerUtility dockerUtilities = new DockerUtility()
-                final ConfigurationHelper helper = new ConfigurationHelper()
-                final JobInformation info = util.getJobInformation()
-                boolean wasTriggerByScm = util.buildWasTriggerByCommit()
+                // run all commands inside docker agent
+                scope.withExecutor('docker') {
 
-                CheckoutInformation checkoutInformation
-                DockerPipelineConfiguration config
-                List calculatedJobProperties
-                String dockerOrganization
-                String artifact
-                boolean deployable
-
-                String buildArgs
-                String buildContext
-                boolean pushImage
-
-                def dockerImage
-                String dockerImageId
-
-                stage('Parse Configuration') {
-                    config = helper.configure(body, new DockerPipelineConfiguration())
-
-                    // branch is deployable if it matches the regex AND it's not from a fork
-                    deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
-                    dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
-                    artifact = config.dockerArtifact ?: info.repository
-
-
-                    List buildParameters = [
-                            string(
-                                    defaultValue: config.buildArgs,
-                                    description: 'Arguments to pass to the "docker build" command',
-                                    name: 'buildArgs',
-                                    trim: true
-                            ),
-                            string(
-                                    defaultValue: config.buildContext,
-                                    description: 'Build context to use for the "docker build" command',
-                                    name: 'buildContext',
-                                    trim: true
-                            )
-                    ]
-
-                    if (deployable) {
-                        buildParameters.add(
-                                booleanParam(
-                                        defaultValue: true,
-                                        description: 'Whether or not to push the built Docker image',
-                                        name: 'pushImage'
-                                )
-                        )
+                    stage('Parse Configuration') {
+                        configuration = parseConfiguration(githubOrganization, body)
                     }
 
-                    calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
+                    // kill build if it goes longer than a given number of minutes without logging anything
+                    scope.withTimeout(configuration.timeoutMinutes) {
 
-                    // set job properties
-                    //noinspection GroovyAssignabilityCheck
-                    properties(calculatedJobProperties)
+                        // run build inside of docker build image
+                        scope.inDockerImage(configuration.buildAgent) {
 
-                    if (wasTriggerByScm) {
-                        // SCM change triggered build, use the parameter definitions from the configuration
-                        buildArgs = config.buildArgs
-                        buildContext = config.buildContext
-                        pushImage = config.pushImage
-                    } else {
-                        // manual build, use the values passed in the parameters
-                        buildArgs = "${params.buildArgs}"
-                        buildContext = "${params.buildContext}"
-                        pushImage = "${params.pushImage}".toBoolean()
-                    }
-                }
-
-                // kill build if it goes longer than a given number of minutes without logging anything
-                //noinspection GroovyVariableNotAssigned
-                scope.withTimeout(config.timeoutMinutes) {
-                    scope.withExecutor(config.nodeType) {
-
-                        stage('Checkout Project') {
-                            checkoutInformation = util.checkoutProject()
-                        }
-
-                        String shortHash = Util.shortHash(checkoutInformation)
-
-                        String branchTag = "${info.branch}-${shortHash}"
-
-                        List tags = []
-
-                        if (deployable) {
-                            // if there's a version defined in the config, generate a "version.build-hash"
-                            // tag for the image. This will typically look like 1.2.3-abcdef;
-                            // otherwise, use the branch tag.
-                            // This is to ensure we always have a unique tag for each image, since the
-                            // "latest" tag will be overwritten by subsequent builds.
-                            if (config.version) {
-                                tags.add("${config.version}-${shortHash}")
-                            } else {
-                                tags.add(branchTag)
-                            }
-
-                            tags.add("latest")
-                        } else {
-                            // non-deployable branches always get tagged with the branch name,
-                            // so it's obvious where they came from
-                            tags.add(branchTag)
-                        }
-
-
-                        currentBuild.displayName = "${dockerUtilities.coordinatesFor(dockerOrganization, artifact, "${tags[0]}")} (#${info.build})"
-                        currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
-
-                        helper.printConfiguration([
-                                'Deployable branches'    : config.deployableBranchRegex,
-                                'Deployable organization': githubOrganization,
-                                'SCM organization'       : info.organization,
-                                'SCM repository'         : info.repository,
-                                'SCM branch'             : info.branch,
-                                'Job is deployable'      : deployable,
-                                'Dockerhub organization' : dockerOrganization,
-                                'Dockerhub repository'   : artifact,
-                                'Docker build arguments' : buildArgs,
-                                'Docker build context'   : buildContext,
-                                'Docker image tags'      : String.join(', ', tags),
-                                'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
-                        ])
-
-                        String buildTag = dockerUtilities.coordinatesFor(dockerOrganization, artifact, Util.entropy())
-
-                        stage('Build Docker Image') {
-                            dockerImage = docker.build(buildTag, "${buildArgs} ${buildContext}")
-                            dockerImageId = util.sh("docker images ${buildTag} --format '{{.ID}}' | head -n 1", quiet: true).trim()
-                        }
-
-                        stage('Tag docker image') {
-
-                            tags.each { tag ->
-                                dockerImage.tag(tag)
-                            }
+                            build(configuration)
 
                         }
-
-                        stage('Print Docker Image Information') {
-                            String strings = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
-                            String imageData = util.sh("docker images '${dockerOrganization}/${artifact}' | grep -E 'REPOSITORY|${dockerImageId}' | grep -P '(^REPOSITORY\\s+|${strings})'", quiet: true).trim()
-                            echo "Built the following images:\n${imageData}"
-                        }
-
-
-                        if (deployable) {
-                            stage('Push Docker image') {
-                                if (pushImage) {
-                                    withCredentials([usernamePassword(credentialsId: config.dockerCredentialsId, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                        try {
-                                            util.sh("echo \"${password}\" | docker login -u \"${username}\" --password-stdin", quiet: true)
-
-                                            tags.each { tag ->
-                                                dockerImage.push(tag)
-                                            }
-
-                                        } finally {
-                                            try {
-                                                util.sh("docker logout", quiet: true)
-                                            } catch (Exception e) {
-                                                echo "WARNING: failed to log out of docker. ${e.class.simpleName}: ${e.message}"
-                                            }
-
-                                            try {
-                                                util.sh("rm -f \"${HOME}/.docker/config.json\"", quiet: true)
-                                            } catch (Exception e) {
-                                                echo "WARNING: failed to remove docker credentials file. ${e.class.simpleName}: ${e.message}"
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    echo 'Not pushing image, disabled via parameter'
-                                }
-                            }
-                        } else {
-                            echo "Not pushing image, branch \"${info.organization}/${info.repository}/${info.branch}\" is not deployable"
-                        }
-
-                        util.sh("docker rmi ${buildTag}", quiet: true)
                     }
                 }
             }
         }
     }
 }
+

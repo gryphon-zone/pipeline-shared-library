@@ -64,7 +64,7 @@ def sh(Map map = [:], String script) {
     )
 }
 
-void enableGitColor(boolean quiet = false) {
+void enableGitColor(boolean quiet = true) {
     if (!quiet) {
         echo("Enabling colorized git output")
     }

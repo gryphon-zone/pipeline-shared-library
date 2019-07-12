@@ -28,7 +28,7 @@ class DockerPipelineConfiguration {
 
     boolean pushImage = true
 
-    String nodeType = 'docker'
+    String buildAgent = 'gryphonzone/docker-cli:latest'
 
     String deployableBranchRegex = 'master'
 

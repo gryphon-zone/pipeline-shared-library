@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-package zone.gryphon.pipeline.toolbox
+package zone.gryphon.pipeline.configuration.effective
 
-String convertToDockerHubName(String name) {
-    return name.replaceAll("\\W", "")
-}
+class EffectiveMavenLibraryPipelineConfiguration {
 
-String coordinatesFor(String org, String artifact, String tag) {
-    return "${org}/${artifact}:${tag}"
-}
+    String mavenArguments
 
-String tag(String image, String tag) {
-    return "${image}:${tag}"
+    boolean performRelease
+
+    int timeoutMinutes
+
+    String buildAgent
+
 }

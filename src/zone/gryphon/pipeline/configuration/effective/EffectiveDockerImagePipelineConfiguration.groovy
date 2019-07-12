@@ -13,16 +13,36 @@
  * limitations under the License.
  */
 
-package zone.gryphon.pipeline.configuration.parsed
+package zone.gryphon.pipeline.configuration.effective
 
-class ParsedMavenLibraryPipelineConfiguration {
+class EffectiveDockerImagePipelineConfiguration {
 
-    String mavenArguments
+    String image
 
-    boolean performRelease
+    String buildArgs
 
+    String buildContext
+
+    String credentials
+
+    /**
+     * Base version for the docker image, usually some form of semVer.
+     */
+    String baseVersion
+
+    /**
+     * Whether the generated image should be pushed to remote repository
+     */
+    boolean push
+
+    /**
+     * Maximum number of minutes build can be idle before it's timed out
+     */
     int timeoutMinutes
 
+    /**
+     * Docker image to run build in
+     */
     String buildAgent
 
 }
