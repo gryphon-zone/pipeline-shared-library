@@ -29,9 +29,14 @@ enum Level {
 }
 
 private void logMessage(Level level, String message) {
+    level = level ?: Level.INFO
     TextColor color = TextColor.instance
     String basePrefix = level.name()
     String prefix
+
+    if (Level.DEBUG == level) {
+        return
+    }
 
     if (isColorSupported()) {
         String l
