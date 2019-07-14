@@ -113,15 +113,15 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         // generates version tag in the form <pom>.<build>-<commit>
         // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
         // NOTE: if there is no maven pom present, `readMavenVersion()` returns "1"
-        echo('Calculating build version')
+        log.info('Calculating build version')
         version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
 
         currentBuild.displayName = "${version} (#${info.build})"
         currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
 
-        echo('Ensuring maven POM exists')
+        log.debug('Ensuring maven POM exists')
         if (!fileExists('pom.xml')) {
-            echo('warning: no pom.xml found, aborting build')
+            log.error('no pom.xml found, aborting build')
             currentBuild.result = 'UNSTABLE'
             currentBuild.description = 'pom.xml not present in project root'
             abort = true
@@ -129,7 +129,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         }
 
         // needed to prevent failures when attempting to make commits
-        echo('Configuring git')
+        log.info('Configuring git author information')
         util.sh("""\
             git config user.email '${checkoutInformation.gitAuthorEmail}' && \
             git config user.name '${checkoutInformation.gitAuthorName}'
@@ -138,7 +138,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         // set up global maven settings
         util.configureMavenSettingsFile()
 
-        echo('Calculating \'$MAVEN_OPTS\' variable')
+        log.info('Calculating \'$MAVEN_OPTS\' variable')
         mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
     }
 
@@ -147,20 +147,29 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     }
 
     stage('Maven Dependency Logging') {
+
+        log.info('Logging Maven project dependencies')
+
         try {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
         } catch (Exception e) {
-            echo("Faield to calculate project dependencies: ${e}")
+            log.warn("Failed to calculate project dependencies: ${e}")
             currentBuild.result = 'UNSTABLE'
         }
     }
 
     stage('Maven Build') {
+
+        log.info("Running maven build with arguments \"${config.mavenArguments}\"")
+
         performBuild(config, util, mavenOpts)
     }
 
     if (config.performRelease) {
         stage('Maven release') {
+
+            log.info("Performing maven release")
+
             // note: maven arguments for release intentionally aren't configurable
             performRelease(util, version, mavenOpts)
         }
