@@ -29,26 +29,28 @@ enum Level {
 
 private void logMessage(Level level, String message) {
     TextColor color = TextColor.instance
-    String basePrefix = "[${level.name()}]"
+    String basePrefix = "${level.name()}"
     String prefix
 
     if (isColorSupported()) {
+        String l
         switch (level) {
             case Level.INFO:
-                prefix = color.blue(basePrefix)
+                l = color.blue(basePrefix)
                 break
             case Level.WARN:
-                prefix = color.yellow(basePrefix)
+                l = color.yellow(basePrefix)
                 break
             case Level.ERROR:
-                prefix = color.red(basePrefix)
+                l = color.red(basePrefix)
                 break
-
             default:
-                prefix = basePrefix
+                l = "${basePrefix}"
         }
+
+        prefix = color.bold("[${l}]")
     } else {
-        prefix = basePrefix
+        prefix = "[${basePrefix}]"
     }
 
     echo("${prefix} ${message}")

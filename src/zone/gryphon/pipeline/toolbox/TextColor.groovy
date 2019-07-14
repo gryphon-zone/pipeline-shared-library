@@ -28,6 +28,11 @@ class TextColor {
 
     private static final String RESET = PREFIX + '0' + SUFFIX
 
+    private static final String BOLD = PREFIX + '1' + SUFFIX
+    private static final String DIM = PREFIX + '2' + SUFFIX
+    private static final String UNDERLINED = PREFIX + '4' + SUFFIX
+    private static final String INVERTED = PREFIX + '7' + SUFFIX
+
     private static final String BLACK = PREFIX + '30' + SUFFIX
     private static final String RED = PREFIX + '31' + SUFFIX
     private static final String GREEN = PREFIX + '32' + SUFFIX
@@ -75,6 +80,22 @@ class TextColor {
 
     String terminate(String text) {
         return "${text}${RESET}"
+    }
+
+    String bold(String text = null) {
+        return color(BOLD, text)
+    }
+
+    String dim(String text = null) {
+        return color(DIM, text)
+    }
+
+    String underlined(String text = null) {
+        return color(UNDERLINED, text)
+    }
+
+    String inverted(String text = null) {
+        return color(INVERTED, text)
     }
 
     String black(String text = null) {
