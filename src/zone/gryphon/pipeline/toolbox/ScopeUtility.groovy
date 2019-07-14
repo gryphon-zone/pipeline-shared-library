@@ -61,7 +61,7 @@ def withExecutor(Map map = [:], String label, Closure body) {
 
     stage(stageName) {
 
-        log.info("Awaiting node with label ${label}")
+        log.info("Awaiting node matching '${label}'")
 
         node(label) {
             withRandomAutoCleaningWorkspace {
@@ -146,6 +146,8 @@ def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
 
         // add timestamps to build logs
         this.withTimestamps {
+
+            log.info('Enabling default build timeout')
 
             // no build is allowed to run for more than 1 hour
             this.withAbsoluteTimeout(60) {

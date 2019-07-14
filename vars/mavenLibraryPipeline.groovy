@@ -119,9 +119,9 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         currentBuild.displayName = "${version} (#${info.build})"
         currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
 
-        log.info('Ensuring maven POM exists')
+        log.debug('Ensuring maven POM exists')
         if (!fileExists('pom.xml')) {
-            log.error('warning: no pom.xml found, aborting build')
+            log.error('no pom.xml found, aborting build')
             currentBuild.result = 'UNSTABLE'
             currentBuild.description = 'pom.xml not present in project root'
             abort = true
@@ -129,7 +129,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         }
 
         // needed to prevent failures when attempting to make commits
-        log.info('Configuring git')
+        log.info('Configuring git author information')
         util.sh("""\
             git config user.email '${checkoutInformation.gitAuthorEmail}' && \
             git config user.name '${checkoutInformation.gitAuthorName}'
@@ -147,6 +147,9 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     }
 
     stage('Maven Dependency Logging') {
+
+        log.info('Logging Maven project dependencies')
+
         try {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
         } catch (Exception e) {
@@ -156,11 +159,17 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     }
 
     stage('Maven Build') {
+
+        log.info("Running maven build with arguments \"${config.mavenArguments}\"")
+
         performBuild(config, util, mavenOpts)
     }
 
     if (config.performRelease) {
         stage('Maven release') {
+
+            log.info("Performing maven release")
+
             // note: maven arguments for release intentionally aren't configurable
             performRelease(util, version, mavenOpts)
         }
