@@ -36,16 +36,16 @@ private void logMessage(Level level, String message) {
         String l
         switch (level) {
             case Level.INFO:
-                l = color.blue(basePrefix)
+                l = color.blue() + basePrefix
                 break
             case Level.WARN:
-                l = color.yellow(basePrefix)
+                l = color.yellow() + basePrefix
                 break
             case Level.ERROR:
-                l = color.red(basePrefix)
+                l = color.red() + basePrefix
                 break
             default:
-                l = "${basePrefix}"
+                l = basePrefix
         }
 
         prefix = color.bold("[${l}]")
