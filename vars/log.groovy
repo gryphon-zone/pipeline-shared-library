@@ -37,14 +37,14 @@ private void logMessage(Level level, String message) {
         String l
 
         switch (level) {
-            case Level.INFO:
-                l = color.blue(basePrefix)
+            case Level.ERROR:
+                l = color.red(basePrefix)
                 break
             case Level.WARN:
                 l = color.yellow(basePrefix)
                 break
-            case Level.ERROR:
-                l = color.red(basePrefix)
+            case Level.INFO:
+                l = color.blue(basePrefix)
                 break
             default:
                 l = basePrefix
@@ -56,6 +56,10 @@ private void logMessage(Level level, String message) {
     }
 
     echo("[${prefix}] ${message}")
+}
+
+void debug(String message, Object... parts) {
+    logMessage(Level.DEBUG, String.format(message, parts))
 }
 
 void info(String message, Object... parts) {
