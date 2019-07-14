@@ -167,6 +167,7 @@ private void build(final EffectiveDockerImagePipelineConfiguration configuration
             grep -P '(^REPOSITORY\\s+|${patterns})'\
             """, quiet: true).trim()
 
+        log.info("Built the following images:\n${dockerImageMetadata}")
     }
 
     if (configuration.push) {
