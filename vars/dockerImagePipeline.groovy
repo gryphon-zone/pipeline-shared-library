@@ -47,12 +47,6 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String gith
                     description: 'Arguments to pass to the "docker build" command',
                     name: 'buildArgs',
                     trim: true
-            ),
-            string(
-                    defaultValue: config.buildContext,
-                    description: 'Build context to use for the "docker build" command',
-                    name: 'buildContext',
-                    trim: true
             )
     ]
 
@@ -75,17 +69,16 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String gith
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
         out.buildArgs = config.buildArgs
-        out.buildContext = config.buildContext
         out.push = deployable && config.pushImage
     } else {
         // manual build, use the values passed in the parameters
         out.buildArgs = "${params.buildArgs}"
-        out.buildContext = "${params.buildContext}"
         out.push = deployable && "${params.push}".toBoolean()
     }
 
     out.image = "${dockerOrganization}/${artifact}"
     out.buildAgent = config.buildAgent
+    out.buildContext = config.buildContext
     out.baseVersion = config.version
     out.timeoutMinutes = config.timeoutMinutes
 
