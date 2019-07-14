@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+
 import zone.gryphon.pipeline.toolbox.TextColor
 
 private boolean isColorSupported() {
@@ -29,31 +30,32 @@ enum Level {
 
 private void logMessage(Level level, String message) {
     TextColor color = TextColor.instance
-    String basePrefix = "${level.name()}"
+    String basePrefix = level.name()
     String prefix
 
     if (isColorSupported()) {
         String l
+
         switch (level) {
             case Level.INFO:
-                l = color.blue() + basePrefix
+                l = color.blue(basePrefix)
                 break
             case Level.WARN:
-                l = color.yellow() + basePrefix
+                l = color.yellow(basePrefix)
                 break
             case Level.ERROR:
-                l = color.red() + basePrefix
+                l = color.red(basePrefix)
                 break
             default:
                 l = basePrefix
         }
 
-        prefix = color.bold("[${l}]")
+        prefix = color.bold(l)
     } else {
-        prefix = "[${basePrefix}]"
+        prefix = basePrefix
     }
 
-    echo("${prefix} ${message}")
+    echo("[${prefix}] ${message}")
 }
 
 void info(String message, Object... parts) {
