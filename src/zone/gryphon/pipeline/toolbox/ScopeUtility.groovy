@@ -50,7 +50,7 @@ def withRandomAutoCleaningWorkspace(Closure body) {
         try {
             return body()
         } finally {
-            echo 'Cleaning workspace'
+            log.info('Cleaning workspace')
             cleanWs(notFailBuild: true)
         }
     }
@@ -61,7 +61,7 @@ def withExecutor(Map map = [:], String label, Closure body) {
 
     stage(stageName) {
 
-        echo "Awaiting node with label ${label}"
+        log.info("Awaiting node with label ${label}")
 
         node(label) {
             withRandomAutoCleaningWorkspace {
@@ -98,13 +98,13 @@ def withDockerAuthentication(String credentialsId, Closure body) {
         try {
             util.sh("docker logout", quiet: true)
         } catch (Exception e) {
-            echo("WARNING: failed to log out of docker. ${e.class.simpleName}: ${e.message}")
+            log.warn("Failed to log out of docker. ${e.class.simpleName}: ${e.message}")
         }
 
         try {
             util.sh("rm -f \"${HOME}/.docker/config.json\"", quiet: true)
         } catch (Exception e) {
-            echo("WARNING: failed to remove docker credentials file. ${e.class.simpleName}: ${e.message}")
+            log.warn("Failed to remove docker credentials file. ${e.class.simpleName}: ${e.message}")
         }
     }
 }
@@ -112,17 +112,17 @@ def withDockerAuthentication(String credentialsId, Closure body) {
 def withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
         final Util util = new Util()
-        echo 'Importing GPG key'
+        log.debug('Importing GPG key')
         util.sh("gpg --batch --yes --import ${GPG_SIGNING_KEY}", returnType: 'none', quiet: true)
-        echo 'Successfully imported GPG key' // previous line throws an error if it fails
+        log.info('Successfully imported GPG key') // previous line throws an error if it fails
 
         try {
             return body()
         } finally {
-            echo 'Deleting GPG key'
+            log.debug('Deleting GPG key')
             String fingerprint = util.sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${env[keyIdEnvVariable]} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'", quiet: true)
             util.sh("gpg --batch --yes --delete-secret-and-public-key ${fingerprint}", quiet: true)
-            echo 'Deleted GPG key'
+            log.info('Deleted GPG key')
         }
     }
 }

@@ -64,10 +64,8 @@ def sh(Map map = [:], String script) {
     )
 }
 
-void enableGitColor(boolean quiet = true) {
-    if (!quiet) {
-        echo("Enabling colorized git output")
-    }
+void enableGitColor() {
+    log.debug("Enabling colorized git output")
 
     this.sh("""\
         git config --global color.ui always && \
@@ -94,10 +92,11 @@ boolean buildWasTriggerByCommit() {
 
     return currentBuild.getBuildCauses().any { cause ->
         String normalized = "${cause['shortDescription']}".toLowerCase()
+
         boolean matches = classCauses.contains("${cause['_class']}") || descriptionCauses.any {
             normalized.contains("${it}")
         }
-//        echo "Raw cause: ${cause}. Commit trigger: ${matches}"
+
         return matches
     }
 }
@@ -143,11 +142,8 @@ CheckoutInformation checkoutProject() {
     return out
 }
 
-void configureMavenSettingsFile(boolean quiet = false) {
-
-    if (!quiet) {
-        echo("Installing Maven settings file")
-    }
+void configureMavenSettingsFile() {
+    log.debug("Installing Maven settings file")
 
     final String file = 'settings.xml'
 
