@@ -60,6 +60,9 @@ def withExecutor(Map map = [:], String label, Closure body) {
     String stageName = map['stageName'] ?: 'Await Executor'
 
     stage(stageName) {
+
+        echo "Awaiting node with label ${label}"
+
         node(label) {
             withRandomAutoCleaningWorkspace {
                 return body()
@@ -106,7 +109,7 @@ def withDockerAuthentication(String credentialsId, Closure body) {
     }
 }
 
-void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
+def withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closure body) {
     withCredentials([string(credentialsId: keyId, variable: keyIdEnvVariable), file(credentialsId: signingKeyId, variable: 'GPG_SIGNING_KEY')]) {
         final Util util = new Util()
         echo 'Importing GPG key'
@@ -120,6 +123,40 @@ void withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Clos
             String fingerprint = util.sh("IFS=\$'\\n' gpg --list-keys --keyid-format=none ${env[keyIdEnvVariable]} | grep -E '^\\s*[a-fA-F0-9]+\\s*\$' | tr -d '[:blank:]'", quiet: true)
             util.sh("gpg --batch --yes --delete-secret-and-public-key ${fingerprint}", quiet: true)
             echo 'Deleted GPG key'
+        }
+    }
+}
+
+/**
+ *
+ * Supported named configuration options:
+ * <table>
+ *      <tr><th>Option</th><th>Description</th></tr>
+ *      <tr><td><pre>executor</pre></td><td>Label for executor (node) to allocate</td><tr>
+ * </table
+ * @param configuration Named configuration options
+ * @param body The closure to run
+ * @return The return value of the closure
+ */
+def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
+    String executor = "${configuration['executor'] ?: 'docker'}"
+
+    // add support for ANSI color
+    this.withColor {
+
+        // add timestamps to build logs
+        this.withTimestamps {
+
+            // no build is allowed to run for more than 1 hour
+            this.withAbsoluteTimeout(60) {
+
+                // allocate executor node
+                this.withExecutor(executor) {
+
+                    return body()
+
+                }
+            }
         }
     }
 }

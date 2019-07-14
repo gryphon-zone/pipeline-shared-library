@@ -241,38 +241,27 @@ def call(String githubOrganization, Closure body) {
     final EffectiveMavenLibraryPipelineConfiguration configuration
     final ScopeUtility scope = new ScopeUtility()
 
-    // add support for ANSI color
-    scope.withColor {
+    // add standard pipeline wrappers.
+    // this command also allocates a build agent for running the build
+    scope.withStandardPipelineWrappers {
 
-        // add timestamps to build logs
-        scope.withTimestamps {
+        stage('Parse Configuration') {
+            configuration = parseConfiguration(githubOrganization, body)
+        }
 
-            // no build is allowed to run for more than 1 hour
-            scope.withAbsoluteTimeout(60) {
+        // kill build if it goes longer than a given number of minutes without logging anything
+        scope.withTimeout(configuration.timeoutMinutes) {
 
-                // run all commands inside docker agent
-                scope.withExecutor('docker') {
-
-                    stage('Parse Configuration') {
-                        configuration = parseConfiguration(githubOrganization, body)
-                    }
-
-                    // kill build if it goes longer than a given number of minutes without logging anything
-                    scope.withTimeout(configuration.timeoutMinutes) {
-
-                        // TODO: dynamically generate cache location
-                        String dockerArgs = """\
+            // TODO: dynamically generate cache location
+            String dockerArgs = """\
                             -v jenkins-shared-m2-cache:'/root/.m2/repository'
                             """.stripIndent().replace("\r\n", "")
 
-                        // run build inside of docker build image
-                        scope.inDockerImage(configuration.buildAgent, args: dockerArgs) {
+            // run build inside of docker build image
+            scope.inDockerImage(configuration.buildAgent, args: dockerArgs) {
 
-                            build(configuration)
+                build(configuration)
 
-                        }
-                    }
-                }
             }
         }
     }

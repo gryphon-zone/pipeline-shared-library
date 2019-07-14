@@ -190,33 +190,22 @@ def call(String githubOrganization, Closure body) {
     final EffectiveDockerImagePipelineConfiguration configuration
     final ScopeUtility scope = new ScopeUtility()
 
-    // add support for ANSI color
-    scope.withColor {
+    // add standard pipeline wrappers.
+    // this command also allocates a build agent for running the build.
+    scope.withStandardPipelineWrappers {
 
-        // add timestamps to build logs
-        scope.withTimestamps {
+        stage('Parse Configuration') {
+            configuration = parseConfiguration(githubOrganization, body)
+        }
 
-            // no build is allowed to run for more than 1 hour
-            scope.withAbsoluteTimeout(60) {
+        // kill build if it goes longer than a given number of minutes without logging anything
+        scope.withTimeout(configuration.timeoutMinutes) {
 
-                // run all commands inside docker agent
-                scope.withExecutor('docker') {
+            // run build inside of docker build image
+            scope.inDockerImage(configuration.buildAgent) {
 
-                    stage('Parse Configuration') {
-                        configuration = parseConfiguration(githubOrganization, body)
-                    }
+                build(configuration)
 
-                    // kill build if it goes longer than a given number of minutes without logging anything
-                    scope.withTimeout(configuration.timeoutMinutes) {
-
-                        // run build inside of docker build image
-                        scope.inDockerImage(configuration.buildAgent) {
-
-                            build(configuration)
-
-                        }
-                    }
-                }
             }
         }
     }
