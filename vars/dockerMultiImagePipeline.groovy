@@ -122,13 +122,13 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
     ]
 
     out.images.eachWithIndex { it, index ->
-        String key = "Configuration for image #${index} (${it.image})"
+        String key = "Configuration for image #${index + 1} (${it.image})"
 
         String value = ''
-        value += "  Image: ${it.image}\n"
-        value += "  Build agent: ${it.buildAgent}\n"
-        value += "  Build arguments: ${it.buildArgs}\n"
-        value += "  Build context: ${it.buildContext}"
+        value += "  Image           : ${it.image}\n"
+        value += "  Build agent     : ${it.buildAgent}\n"
+        value += "  Build arguments : ${it.buildArgs}\n"
+        value += "  Build context   : ${it.buildContext}"
 
         printableConfiguration[key] = value
     }
