@@ -141,23 +141,33 @@ def withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closu
 def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
     String executor = "${configuration['executor'] ?: 'docker'}"
 
+    long start = System.currentTimeMillis()
+
     // add support for ANSI color
     this.withColor {
 
         // add timestamps to build logs
         this.withTimestamps {
 
-            log.info('Enabling default build timeout')
+            try {
 
-            // no build is allowed to run for more than 1 hour
-            this.withAbsoluteTimeout(60) {
+                log.info('Enabling default build timeout')
 
-                // allocate executor node
-                this.withExecutor(executor) {
+                // no build is allowed to run for more than 1 hour
+                this.withAbsoluteTimeout(60) {
 
-                    return body()
+                    // allocate executor node
+                    this.withExecutor(executor) {
 
+                        return body()
+
+                    }
                 }
+
+            } finally {
+                long durationMs = System.currentTimeMillis() - start
+                log.info("Pipeline ${env.BUILD_URL} completed in ${durationMs / 1000} seconds")
+
             }
         }
     }
