@@ -17,28 +17,34 @@ package zone.gryphon.pipeline.configuration
 
 class DockerMultiImagePipelineSingleImageConfiguration {
 
+    /**
+     * Path in the repo to the Dockerfile to use for this build.
+     */
+    String dockerfile
+
     String buildArguments = ''
 
-    String buildContext = '.'
-
-    String buildAgent = 'gryphonzone/docker-cli:latest'
+    /**
+     * Build context to use for the docker build command.
+     * If not specified, defaults to the directory containing the {@link #dockerfile}.
+     */
+    String buildContext
 
     /**
      * Name of the dockerhub organization to public the image to
      */
-    String dockerOrganization = null
+    String dockerOrganization
 
     /**
      * name of docker artifact to publish.
      */
-    String dockerArtifact = null
-
-    /**
-     * ID of username/password credentials to use to log into docker
-     */
-    String dockerCredentialsId = 'docker'
+    String dockerArtifact
 
     String version = '1.0'
+
+    void dockerfile(String dockerfile) {
+        this.dockerfile = dockerfile
+    }
 
     void buildArguments(String buildArguments) {
         this.buildArguments = buildArguments
@@ -48,20 +54,13 @@ class DockerMultiImagePipelineSingleImageConfiguration {
         this.buildContext = buildContext
     }
 
-    void buildAgent(String buildAgent) {
-        this.buildAgent = buildAgent
-    }
-
     void dockerOrganization(String dockerOrganization) {
         this.dockerOrganization = dockerOrganization
     }
 
+
     void dockerArtifact(String dockerArtifact) {
         this.dockerArtifact = dockerArtifact
-    }
-
-    void dockerCredentialsId(String dockerCredentialsId) {
-        this.dockerCredentialsId = dockerCredentialsId
     }
 
     void version(String version) {

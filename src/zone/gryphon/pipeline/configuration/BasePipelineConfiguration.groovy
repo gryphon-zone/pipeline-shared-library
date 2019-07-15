@@ -18,6 +18,13 @@ package zone.gryphon.pipeline.configuration
 class BasePipelineConfiguration {
 
     /**
+     * Docker image to run pipeline build inside of.
+     * Each pipeline will set this to a default value which should contain the tools
+     * required to build the artifacts that pipeline targets.
+     */
+    String buildAgent
+
+    /**
      * Custom job properties
      */
     List jobProperties = []
@@ -48,6 +55,10 @@ class BasePipelineConfiguration {
      * </p>
      */
     String deployableOrganization
+
+    void buildAgent(String buildAgent) {
+        this.buildAgent = buildAgent
+    }
 
     void jobProperties(List jobProperties) {
         this.jobProperties = jobProperties

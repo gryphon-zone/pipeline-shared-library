@@ -17,10 +17,20 @@ package zone.gryphon.pipeline.configuration
 
 class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
 
+    DockerMultiImagePipelineConfiguration() {
+        super()
+        this.buildAgent = 'gryphonzone/docker-cli:latest'
+    }
+
     /**
      * Whether to push built images or not; only applicable of the build is deployable
      */
     boolean push = true
+
+    /**
+     * ID of username/password credentials to use to log into docker
+     */
+    String dockerCredentialsId = 'docker'
 
     /**
      * docker run arguments applied to all images being built
@@ -31,6 +41,10 @@ class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
 
     void push(boolean push) {
         this.push = push
+    }
+
+    void dockerCredentialsId(String dockerCredentialsId) {
+        this.dockerCredentialsId = dockerCredentialsId
     }
 
     void globalBuildArguments(String globalBuildArguments) {

@@ -18,7 +18,7 @@ package zone.gryphon.pipeline.configuration.effective
 class EffectiveDockerMultiImagePipelineSingleImageConfiguration {
 
     /**
-     * Docker image/repository, e.g. foo/bar
+     * Docker image (AKA repository), e.g. "foo/bar"
      */
     String image
 
@@ -28,29 +28,8 @@ class EffectiveDockerMultiImagePipelineSingleImageConfiguration {
     String buildArgs
 
     /**
-     * Context for docker build command
-     */
-    String buildContext
-
-    /**
-     * ID of the credentials on the Jenkins master to use.
-     * Only used if {@link #push} is true
-     */
-    String credentials
-
-    /**
      * Base version for the docker image, usually some form of semVer.
      */
     String baseVersion
-
-    /**
-     * Whether the generated image should be pushed to remote repository
-     */
-    boolean push
-
-    /**
-     * Docker image to run build in
-     */
-    String buildAgent
 
 }

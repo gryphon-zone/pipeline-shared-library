@@ -25,7 +25,7 @@ import zone.gryphon.pipeline.toolbox.Util
 
 private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
 
-    stage ("Build ${configuration.image}") {
+    stage("Build ${configuration.image}") {
         echo "hi"
         sleep 5
         echo "bye"
@@ -36,11 +36,15 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
 
-    stage ("Push ${configuration.image}") {
+    stage("Push ${configuration.image}") {
         echo "hi"
         sleep 5
         echo "bye"
     }
+}
+
+private static String directoryOf(String path) {
+    return path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : '.'
 }
 
 private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String organization, Closure body) {
@@ -97,26 +101,29 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String dockerOrg = imageConfig.dockerOrganization ?: defaultDockerOrganization
         String dockerArtifact = imageConfig.dockerArtifact
 
-        c.push = shouldPush
 
         c.image = "${dockerOrg}/${dockerArtifact}"
 
-        c.buildAgent = imageConfig.buildAgent
 
         c.baseVersion = imageConfig.version ?: '1.0'
 
-        c.buildContext = imageConfig.buildContext ?: '.'
+        String buildContext = imageConfig.buildContext ?: directoryOf(imageConfig.dockerfile)
 
         // add global and specific build args
-        c.buildArgs = String.join(' ', [globalBuildParams, imageConfig.buildArguments].findAll {
+        c.buildArgs = String.join(' ', [
+                globalBuildParams,
+                imageConfig.buildArguments,
+                "--file \"${imageConfig.dockerfile}\"",
+                buildContext
+        ].findAll {
             !(it == null || it.trim().isEmpty())
         })
-
-        c.credentials = imageConfig.dockerCredentialsId
 
         return c
     }
 
+    out.buildAgent = config.buildAgent
+    out.push = shouldPush
     out.timeoutMinutes = config.idleTimeout
 
     Map printableConfiguration = [
@@ -135,9 +142,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
         String value = ''
         value += "  Image           : ${it.image}\n"
-        value += "  Build agent     : ${it.buildAgent}\n"
         value += "  Build arguments : ${it.buildArgs}\n"
-        value += "  Build context   : ${it.buildContext}"
 
         printableConfiguration[key] = value
     }
@@ -164,25 +169,13 @@ def call(String githubOrganization, Closure body) {
 
             Map<Integer, List<String>> tags = [:]
 
-            configuration.images.eachWithIndex{ config, index ->
+            configuration.images.eachWithIndex { config, index ->
                 tags[index] = build(config)
             }
 
-            configuration.images.eachWithIndex{ config, index ->
-                 push(config, tags[index])
+            configuration.images.eachWithIndex { config, index ->
+                push(config, tags[index])
             }
-
-//            Map jobs = [:]
-//            jobs['failFast'] = false
-//
-//            configuration.images.eachWithIndex { config, index ->
-//                jobs["${config.image} - ${index + 1}"] = {
-//
-//                }
-//            }
-//
-//            // father forgive me, for I have sinned
-//            parallel(jobs)
         }
     }
 }

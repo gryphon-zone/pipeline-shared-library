@@ -17,13 +17,16 @@ package zone.gryphon.pipeline.configuration
 
 class DockerPipelineConfiguration extends BasePipelineConfiguration {
 
+    DockerPipelineConfiguration() {
+        super()
+        this.buildAgent = 'gryphonzone/docker-cli:latest'
+    }
+
     String buildArgs = '--pull --progress \'plain\''
 
     String buildContext = '.'
 
     boolean pushImage = true
-
-    String buildAgent = 'gryphonzone/docker-cli:latest'
 
     /**
      * Name of the dockerhub organization to public the image to

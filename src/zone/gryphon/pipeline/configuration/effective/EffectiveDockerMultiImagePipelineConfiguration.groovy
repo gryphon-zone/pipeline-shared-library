@@ -23,6 +23,22 @@ class EffectiveDockerMultiImagePipelineConfiguration {
     int timeoutMinutes
 
     /**
+     * ID of the credentials on the Jenkins master to use.
+     * Only used if {@link #push} is true
+     */
+    String credentials
+
+    /**
+     * Whether the generated image should be pushed to remote repository
+     */
+    boolean push
+
+    /**
+     * Docker image to run build in
+     */
+    String buildAgent
+
+    /**
      * Configuration for each individual image
      */
     List<EffectiveDockerMultiImagePipelineSingleImageConfiguration> images
