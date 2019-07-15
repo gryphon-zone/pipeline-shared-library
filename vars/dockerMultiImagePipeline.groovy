@@ -33,7 +33,11 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
 }
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
+    DockerUtility d = new DockerUtility()
 
+    for (String tag : tags) {
+        log.info("Pushing ${configuration.image}:${tag}")
+    }
 }
 
 private static String directoryOf(String path) {
