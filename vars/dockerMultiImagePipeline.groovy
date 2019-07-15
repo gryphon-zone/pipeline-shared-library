@@ -29,6 +29,10 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     tags.addAll(defaultTags)
     tags.addAll(configuration.additionalTags)
 
+    String buildImage = "${configuration.image}:${tags[0]}"
+
+    dockerImage = docker.build(buildImage, configuration.buildArgs)
+
     return tags
 }
 
