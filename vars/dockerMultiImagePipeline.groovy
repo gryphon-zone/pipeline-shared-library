@@ -27,8 +27,6 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
 
     stage("Build ${configuration.image}") {
         echo "hi"
-        sleep 5
-        echo "bye"
     }
 
     return []
@@ -38,8 +36,6 @@ private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration conf
 
     stage("Push ${configuration.image}") {
         echo "hi"
-        sleep 5
-        echo "bye"
     }
 }
 
@@ -167,14 +163,19 @@ def call(String githubOrganization, Closure body) {
         // kill build if it goes longer than a given number of minutes without logging anything
         scope.withTimeout(configuration.timeoutMinutes) {
 
-            Map<Integer, List<String>> tags = [:]
+            // run build inside of docker build image
+            scope.inDockerImage(configuration.buildAgent) {
 
-            configuration.images.eachWithIndex { config, index ->
-                tags[index] = build(config)
-            }
+                Map<Integer, List<String>> tags = [:]
 
-            configuration.images.eachWithIndex { config, index ->
-                push(config, tags[index])
+                configuration.images.eachWithIndex { config, index ->
+                    tags[index] = build(config)
+                }
+
+                configuration.images.eachWithIndex { config, index ->
+                    push(config, tags[index])
+                }
+
             }
         }
     }
