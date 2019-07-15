@@ -29,8 +29,15 @@ class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
 
     List<Closure> images = []
 
+    void push(boolean push) {
+        this.push = push
+    }
 
-    void setImages(List<Closure> images) {
+    void globalBuildArguments(String globalBuildArguments) {
+        this.globalBuildArguments = globalBuildArguments
+    }
+
+    void images(List<Closure> images) {
         this.images = images
     }
 

@@ -99,7 +99,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         c.buildContext = imageConfig.buildContext ?: '.'
 
         // add global and specific build args
-        c.buildArgs = String.join(' ', [globalBuildParams, imageConfig.buildArgs].findAll {
+        c.buildArgs = String.join(' ', [globalBuildParams, imageConfig.buildArguments].findAll {
             !(it == null || it.trim().isEmpty())
         })
 
