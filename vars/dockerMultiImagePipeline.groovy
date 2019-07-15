@@ -27,13 +27,13 @@ private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration con
 
     stage ("Build ${configuration.image}") {
         echo "hi"
-        sleep 1000
+        sleep 5
         echo "bye"
     }
 
     stage ("Push ${configuration.image}") {
         echo "hi"
-        sleep 1000
+        sleep 5
         echo "bye"
     }
 }
