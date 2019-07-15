@@ -184,29 +184,8 @@ def call(String githubOrganization, Closure body) {
 
                     String branchTag = "${info.branch}-${shortHash}"
 
-                    if (configuration.push) {
-                        // if there's a version defined in the config, generate a "version.build-hash"
-                        // tag for the image. This will typically look like 1.2.3-abcdef;
-                        // otherwise, use the branch tag.
-                        // This is to ensure we always have a unique tag for each image, since the
-                        // "latest" tag will be overwritten by subsequent builds.
-                        if (configuration.baseVersion) {
-                            tags.add("${configuration.baseVersion}-${shortHash}")
-                        } else {
-                            tags.add(branchTag)
-                        }
-
-                        tags.add("latest")
-                    } else {
-                        // non-deployable branches always get tagged with the branch name,
-                        // so it's obvious where they came from
-                        tags.add(branchTag)
-                    }
-
-                    dockerImageName = dockerUtilities.tag(configuration.image, tags[0])
-
-                    currentBuild.displayName = "${dockerImageName} (#${info.build})"
-                    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
+                    currentBuild.displayName = "${branchTag} (#${info.build})"
+                    currentBuild.description = configuration.push ? "Release images" : "Build images"
                 }
 
 
