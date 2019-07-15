@@ -18,11 +18,15 @@ package zone.gryphon.pipeline.configuration
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.TextColor
 
-
-def <T extends BasePipelineConfiguration> T configure(String organization, Closure body, T config) {
+def <T> T configure(Closure body, T config) {
     body.resolveStrategy = Closure.OWNER_FIRST
     body.delegate = config
     body()
+    return config
+}
+
+def <T extends BasePipelineConfiguration> T configure(String organization, Closure body, T config) {
+    configure(body, config)
     config.deployableOrganization = organization
     return config
 }
