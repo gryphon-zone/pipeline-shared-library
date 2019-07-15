@@ -23,13 +23,18 @@ import zone.gryphon.pipeline.toolbox.Util
  * limitations under the License.
  */
 
-private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
+private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
 
     stage ("Build ${configuration.image}") {
         echo "hi"
         sleep 5
         echo "bye"
     }
+
+    return []
+}
+
+private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
 
     stage ("Push ${configuration.image}") {
         echo "hi"
@@ -157,9 +162,16 @@ def call(String githubOrganization, Closure body) {
         // kill build if it goes longer than a given number of minutes without logging anything
         scope.withTimeout(configuration.timeoutMinutes) {
 
-            for (EffectiveDockerMultiImagePipelineSingleImageConfiguration config : configuration.images) {
-                build(config)
+            Map<Integer, List<String>> tags = [:]
+
+            configuration.images.eachWithIndex{ config, index ->
+                tags[index] = build(config)
             }
+
+            configuration.images.eachWithIndex{ config, index ->
+                 push(config, tags[index])
+            }
+
 //            Map jobs = [:]
 //            jobs['failFast'] = false
 //
