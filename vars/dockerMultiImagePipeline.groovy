@@ -157,17 +157,20 @@ def call(String githubOrganization, Closure body) {
         // kill build if it goes longer than a given number of minutes without logging anything
         scope.withTimeout(configuration.timeoutMinutes) {
 
-            Map jobs = [:]
-            jobs['failFast'] = false
-
-            configuration.images.eachWithIndex { config, index ->
-                jobs["${config.image} - ${index + 1}"] = {
-                    build(config)
-                }
+            for (EffectiveDockerMultiImagePipelineSingleImageConfiguration config : configuration.images) {
+                build(config)
             }
-
-            // father forgive me, for I have sinned
-            parallel(jobs)
+//            Map jobs = [:]
+//            jobs['failFast'] = false
+//
+//            configuration.images.eachWithIndex { config, index ->
+//                jobs["${config.image} - ${index + 1}"] = {
+//
+//                }
+//            }
+//
+//            // father forgive me, for I have sinned
+//            parallel(jobs)
         }
     }
 }
