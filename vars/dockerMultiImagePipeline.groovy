@@ -161,7 +161,7 @@ def call(String githubOrganization, Closure body) {
             jobs['failFast'] = false
 
             configuration.images.eachWithIndex { config, index ->
-                jobs["${index} - ${config.image}"] = {
+                jobs["${config.image} - ${index + 1}"] = {
                     build(config)
                 }
             }
