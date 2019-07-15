@@ -22,6 +22,13 @@ class DockerMultiImagePipelineSingleImageConfiguration {
      */
     String dockerfile
 
+    /**
+     * Additional hardcoded values to tag the built image as.
+     * Only applied if {@link zone.gryphon.pipeline.configuration.DockerMultiImagePipelineConfiguration#push} is true
+     * and the build is deployable.
+     */
+    List<String> additionalTags = []
+
     String buildArguments = ''
 
     /**
@@ -46,6 +53,10 @@ class DockerMultiImagePipelineSingleImageConfiguration {
         this.dockerfile = dockerfile
     }
 
+    void additionalTags(List<String> additionalTags) {
+        this.additionalTags = additionalTags
+    }
+
     void buildArguments(String buildArguments) {
         this.buildArguments = buildArguments
     }
@@ -57,7 +68,6 @@ class DockerMultiImagePipelineSingleImageConfiguration {
     void dockerOrganization(String dockerOrganization) {
         this.dockerOrganization = dockerOrganization
     }
-
 
     void dockerArtifact(String dockerArtifact) {
         this.dockerArtifact = dockerArtifact
