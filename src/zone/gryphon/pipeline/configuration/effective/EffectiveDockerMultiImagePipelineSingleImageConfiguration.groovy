@@ -28,6 +28,11 @@ class EffectiveDockerMultiImagePipelineSingleImageConfiguration {
     String buildArgs
 
     /**
+     * Additional tags for the docker image
+     */
+    List<String> additionalTags
+
+    /**
      * Base version for the docker image, usually some form of semVer.
      */
     String baseVersion
