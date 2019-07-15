@@ -29,18 +29,11 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     tags.addAll(defaultTags)
     tags.addAll(configuration.additionalTags)
 
-    stage("Build ${configuration.image}") {
-        echo "hi"
-    }
-
     return tags
 }
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
 
-    stage("Push ${configuration.image}") {
-        echo "hi"
-    }
 }
 
 private static String directoryOf(String path) {
@@ -195,11 +188,15 @@ def call(String githubOrganization, Closure body) {
                 Map<Integer, List<String>> tags = [:]
 
                 configuration.images.eachWithIndex { config, index ->
-                    tags[index] = build(config, defaultTags)
+                    stage("Build ${config.image}") {
+                        tags[index] = build(config, defaultTags)
+                    }
                 }
 
                 configuration.images.eachWithIndex { config, index ->
-                    push(config, tags[index])
+                    stage("Push ${config.image}") {
+                        push(config, tags[index])
+                    }
                 }
 
             }
