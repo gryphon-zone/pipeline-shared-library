@@ -29,4 +29,9 @@ class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
 
     List<Closure> images = []
 
+
+    void setImages(List<Closure> images) {
+        this.images = images
+    }
+
 }
