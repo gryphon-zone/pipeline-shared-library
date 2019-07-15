@@ -103,9 +103,8 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
 
         c.image = "${dockerOrg}/${dockerArtifact}"
-
-
         c.baseVersion = imageConfig.version ?: '1.0'
+        c.additionalTags = imageConfig.additionalTags ?: []
 
         String buildContext = imageConfig.buildContext ?: directoryOf(imageConfig.dockerfile)
 
