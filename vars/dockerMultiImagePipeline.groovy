@@ -3,6 +3,7 @@ import zone.gryphon.pipeline.configuration.DockerMultiImagePipelineConfiguration
 import zone.gryphon.pipeline.configuration.DockerMultiImagePipelineSingleImageConfiguration
 import zone.gryphon.pipeline.configuration.effective.EffectiveDockerMultiImagePipelineConfiguration
 import zone.gryphon.pipeline.configuration.effective.EffectiveDockerMultiImagePipelineSingleImageConfiguration
+import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtility
 import zone.gryphon.pipeline.toolbox.ScopeUtility
@@ -150,7 +151,10 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
 def call(String githubOrganization, Closure body) {
     final EffectiveDockerMultiImagePipelineConfiguration configuration
+    final CheckoutInformation checkoutInformation
+
     final ScopeUtility scope = new ScopeUtility()
+    final Util util = new Util()
 
     // add standard pipeline wrappers.
     // this command also allocates a build agent for running the build.
@@ -165,6 +169,44 @@ def call(String githubOrganization, Closure body) {
 
             // run build inside of docker build image
             scope.inDockerImage(configuration.buildAgent) {
+
+                stage('Checkout Project') {
+                    // enable git color before performing checkout
+                    util.enableGitColor()
+
+                    checkoutInformation = util.checkoutProject()
+                }
+
+                stage('Configure Project') {
+                    String shortHash = Util.shortHash(checkoutInformation)
+
+                    String branchTag = "${info.branch}-${shortHash}"
+
+                    if (configuration.push) {
+                        // if there's a version defined in the config, generate a "version.build-hash"
+                        // tag for the image. This will typically look like 1.2.3-abcdef;
+                        // otherwise, use the branch tag.
+                        // This is to ensure we always have a unique tag for each image, since the
+                        // "latest" tag will be overwritten by subsequent builds.
+                        if (configuration.baseVersion) {
+                            tags.add("${configuration.baseVersion}-${shortHash}")
+                        } else {
+                            tags.add(branchTag)
+                        }
+
+                        tags.add("latest")
+                    } else {
+                        // non-deployable branches always get tagged with the branch name,
+                        // so it's obvious where they came from
+                        tags.add(branchTag)
+                    }
+
+                    dockerImageName = dockerUtilities.tag(configuration.image, tags[0])
+
+                    currentBuild.displayName = "${dockerImageName} (#${info.build})"
+                    currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
+                }
+
 
                 Map<Integer, List<String>> tags = [:]
 
