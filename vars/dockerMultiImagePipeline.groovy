@@ -140,9 +140,9 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String key = "Configuration for image #${index + 1} (${it.image})"
 
         String value = ''
-        value += "  Image           : ${it.image}\n"
-        value += "  Build arguments : ${it.buildArgs}\n"
-        value += "  Additional tags :" + (it.additionalTags.isEmpty() ? '<none>' : String.join(', ', it.additionalTags))
+        value += "  Image                 : ${it.image}\n"
+        value += "  Build arguments       : ${it.buildArgs}\n"
+        value += "  Additional Image tags : " + (it.additionalTags.isEmpty() ? '<none>' : String.join(', ', it.additionalTags))
 
         printableConfiguration[key] = value
     }
