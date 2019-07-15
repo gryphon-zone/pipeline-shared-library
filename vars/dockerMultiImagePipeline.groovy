@@ -156,6 +156,8 @@ def call(String githubOrganization, Closure body) {
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
 
+    final JobInformation info = util.getJobInformation()
+
     // add standard pipeline wrappers.
     // this command also allocates a build agent for running the build.
     scope.withStandardPipelineWrappers {
