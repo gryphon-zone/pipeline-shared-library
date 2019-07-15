@@ -24,13 +24,16 @@ import zone.gryphon.pipeline.toolbox.Util
  * limitations under the License.
  */
 
-private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
+private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags) {
+    List<String> tags = []
+    tags.addAll(defaultTags)
+    tags.addAll(configuration.additionalTags)
 
     stage("Build ${configuration.image}") {
         echo "hi"
     }
 
-    return []
+    return tags
 }
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
@@ -155,6 +158,7 @@ def call(String githubOrganization, Closure body) {
 
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
+    final List<String> defaultTags = []
 
     final JobInformation info = util.getJobInformation()
 
@@ -177,22 +181,21 @@ def call(String githubOrganization, Closure body) {
                     util.enableGitColor()
 
                     checkoutInformation = util.checkoutProject()
-                }
 
-                stage('Configure Project') {
                     String shortHash = Util.shortHash(checkoutInformation)
 
                     String branchTag = "${info.branch}-${shortHash}"
 
                     currentBuild.displayName = "${branchTag} (#${info.build})"
                     currentBuild.description = configuration.push ? "Release images" : "Build images"
-                }
 
+                    defaultTags.add(configuration.push ? 'latest' : branchTag)
+                }
 
                 Map<Integer, List<String>> tags = [:]
 
                 configuration.images.eachWithIndex { config, index ->
-                    tags[index] = build(config)
+                    tags[index] = build(config, defaultTags)
                 }
 
                 configuration.images.eachWithIndex { config, index ->
