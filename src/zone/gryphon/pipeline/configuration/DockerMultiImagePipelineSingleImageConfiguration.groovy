@@ -17,7 +17,7 @@ package zone.gryphon.pipeline.configuration
 
 class DockerMultiImagePipelineSingleImageConfiguration {
 
-    String buildArgs = ''
+    String buildArguments = ''
 
     String buildContext = '.'
 
@@ -39,5 +39,33 @@ class DockerMultiImagePipelineSingleImageConfiguration {
     String dockerCredentialsId = 'docker'
 
     String version = '1.0'
+
+    void buildArguments(String buildArguments) {
+        this.buildArguments = buildArguments
+    }
+
+    void buildContext(String buildContext) {
+        this.buildContext = buildContext
+    }
+
+    void buildAgent(String buildAgent) {
+        this.buildAgent = buildAgent
+    }
+
+    void dockerOrganization(String dockerOrganization) {
+        this.dockerOrganization = dockerOrganization
+    }
+
+    void dockerArtifact(String dockerArtifact) {
+        this.dockerArtifact = dockerArtifact
+    }
+
+    void dockerCredentialsId(String dockerCredentialsId) {
+        this.dockerCredentialsId = dockerCredentialsId
+    }
+
+    void version(String version) {
+        this.version = version
+    }
 
 }
