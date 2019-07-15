@@ -15,12 +15,7 @@
 
 package zone.gryphon.pipeline.configuration
 
-class DockerPipelineConfiguration {
-
-    /**
-     * Build timeout in minutes; if there's no activity in the logs for this duration of time the build is killed
-     */
-    int timeoutMinutes = 5
+class DockerPipelineConfiguration extends BasePipelineConfiguration {
 
     String buildArgs = '--pull --progress \'plain\''
 
@@ -29,13 +24,6 @@ class DockerPipelineConfiguration {
     boolean pushImage = true
 
     String buildAgent = 'gryphonzone/docker-cli:latest'
-
-    String deployableBranchRegex = 'master'
-
-    /**
-     * Custom job properties
-     */
-    List jobProperties = []
 
     /**
      * Name of the dockerhub organization to public the image to
@@ -53,12 +41,5 @@ class DockerPipelineConfiguration {
     String dockerCredentialsId = 'docker'
 
     String version = '1.0'
-
-
-    void jobProperties(List jobProperties) {
-        this.jobProperties = jobProperties
-    }
-
-
 
 }

@@ -15,14 +15,22 @@
 
 package zone.gryphon.pipeline.configuration
 
+import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.TextColor
 
 
-def <T> T configure(Closure body, T config) {
+def <T extends BasePipelineConfiguration> T configure(String organization, Closure body, T config) {
     body.resolveStrategy = Closure.OWNER_FIRST
     body.delegate = config
     body()
+    config.deployableOrganization = organization
     return config
+}
+
+@SuppressWarnings("GrMethodMayBeStatic")
+boolean isDeployable(BasePipelineConfiguration configuration, JobInformation info) {
+    // branch is deployable if it matches the regex AND it's not from a fork
+    return (configuration.deployableOrganization == info.organization) && (info.branch.matches(configuration.deployableBranchRegex))
 }
 
 

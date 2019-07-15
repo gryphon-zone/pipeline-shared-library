@@ -15,23 +15,12 @@
 
 package zone.gryphon.pipeline.configuration
 
-class MavenLibraryPipelineConfiguration {
-
-    /**
-     * Build timeout in minutes; if there's no activity in the logs for this duration of time the build is killed
-     */
-    int timeoutMinutes = 5
+class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
     /**
      * Docker image to run maven build in
      */
     String buildAgent = 'gryphonzone/java:11-jdk'
-
-    /**
-     * Regex for which branches are considered "releasable".
-     * Non releasable branches will not have their artifacts pushed remotely
-     */
-    String deployableBranchRegex = 'master'
 
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
@@ -44,16 +33,5 @@ class MavenLibraryPipelineConfiguration {
      * Ignored if the branch being built does not match the deployableBranchRegex
      */
     boolean automaticallyRelease = true
-
-    /**
-     * Custom job properties
-     */
-    List jobProperties = []
-
-    void jobProperties(List jobProperties) {
-        this.jobProperties = jobProperties
-    }
-
-
 
 }

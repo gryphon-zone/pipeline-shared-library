@@ -176,17 +176,16 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     }
 }
 
-EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
+EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organization, Closure body) {
     final Util util = new Util()
 
     final EffectiveMavenLibraryPipelineConfiguration finalConfig = new EffectiveMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
     final JobInformation info = util.getJobInformation()
 
-    MavenLibraryPipelineConfiguration config = helper.configure(body, new MavenLibraryPipelineConfiguration())
+    MavenLibraryPipelineConfiguration config = helper.configure(organization, body, new MavenLibraryPipelineConfiguration())
 
-    // branch is deployable if it matches the regex AND it's not from a fork
-    boolean deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
+    boolean deployable = helper.isDeployable(config, info)
 
     String defaultMavenArgs
     List buildParameters = []
@@ -218,7 +217,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String githubOrgan
     properties(calculatedJobProperties)
 
     finalConfig.buildAgent = config.buildAgent
-    finalConfig.timeoutMinutes = config.timeoutMinutes
+    finalConfig.timeoutMinutes = config.idleTimeout
 
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
@@ -232,7 +231,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String githubOrgan
 
     helper.printConfiguration([
             'Deployable branches'    : config.deployableBranchRegex,
-            'Deployable organization': githubOrganization,
+            'Deployable organization': organization,
             'SCM organization'       : info.organization,
             'SCM repository'         : info.repository,
             'SCM branch'             : info.branch,

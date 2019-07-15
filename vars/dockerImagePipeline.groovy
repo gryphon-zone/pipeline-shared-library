@@ -25,10 +25,10 @@ import zone.gryphon.pipeline.toolbox.Util
 
 import java.util.regex.Pattern
 
-private EffectiveDockerImagePipelineConfiguration parseConfiguration(String githubOrganization, Closure body) {
+private EffectiveDockerImagePipelineConfiguration parseConfiguration(String organization, Closure body) {
     final ConfigurationHelper helper = new ConfigurationHelper()
 
-    final DockerPipelineConfiguration config = helper.configure(body, new DockerPipelineConfiguration())
+    final DockerPipelineConfiguration config = helper.configure(organization, body, new DockerPipelineConfiguration())
     final EffectiveDockerImagePipelineConfiguration out = new EffectiveDockerImagePipelineConfiguration()
 
     final Util util = new Util()
@@ -36,8 +36,7 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String gith
 
     final JobInformation info = util.getJobInformation()
 
-    // branch is deployable if it matches the regex AND it's not from a fork
-    boolean deployable = (githubOrganization == info.organization) && info.branch.matches(config.deployableBranchRegex)
+    boolean deployable = helper.isDeployable(config, info)
     String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
     String artifact = config.dockerArtifact ?: info.repository
 
@@ -80,14 +79,14 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String gith
     out.buildAgent = config.buildAgent
     out.buildContext = config.buildContext
     out.baseVersion = config.version
-    out.timeoutMinutes = config.timeoutMinutes
+    out.timeoutMinutes = config.idleTimeout
 
     // credentials may be configurable in the future
     out.credentials = 'docker'
 
     helper.printConfiguration([
             'Job is deployable'      : deployable,
-            'Deployable organization': githubOrganization,
+            'Deployable organization': organization,
             'Deployable branches'    : config.deployableBranchRegex,
             'SCM organization'       : info.organization,
             'SCM repository'         : info.repository,
