@@ -104,7 +104,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
         c.image = "${dockerOrg}/${dockerArtifact}"
         c.baseVersion = imageConfig.version ?: '1.0'
-        c.additionalTags = imageConfig.additionalTags ?: []
+        c.additionalTags = shouldPush ? imageConfig.additionalTags : []
 
         String buildContext = imageConfig.buildContext ?: directoryOf(imageConfig.dockerfile)
 
@@ -142,7 +142,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String value = ''
         value += "  Image                 : ${it.image}\n"
         value += "  Build arguments       : ${it.buildArgs}\n"
-        value += "  Additional Image tags : " + (it.additionalTags.isEmpty() ? '<none>' : String.join(', ', it.additionalTags))
+        value += "  Additional image tags : " + (it.additionalTags.isEmpty() ? '<none>' : String.join(', ', it.additionalTags))
 
         printableConfiguration[key] = value
     }
