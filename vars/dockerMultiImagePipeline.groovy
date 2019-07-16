@@ -33,6 +33,9 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
 
     dockerImage = docker.build(buildImage, configuration.buildArgs)
 
+
+    echo "post build"
+
     return tags
 }
 
@@ -75,7 +78,6 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
     final JobInformation info = util.getJobInformation()
 
     boolean deployable = helper.isDeployable(config, info)
-    final String cwd = pwd()
 
     String defaultDockerOrganization = dockerUtilities.convertToDockerHubName(info.organization)
 
@@ -119,9 +121,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
         EffectiveDockerMultiImagePipelineSingleImageConfiguration image = new EffectiveDockerMultiImagePipelineSingleImageConfiguration()
 
-        String fullDockerfile = "${cwd}/${rawImageConfiguration.dockerfile}"
-
-        String buildContext = rawImageConfiguration.buildContext ?: directoryOf(fullDockerfile)
+        String buildContext = rawImageConfiguration.buildContext ?: directoryOf(rawImageConfiguration.dockerfile)
         String dockerOrg = rawImageConfiguration.dockerOrganization ?: defaultDockerOrganization
         String dockerArtifact = rawImageConfiguration.artifact
 
@@ -133,7 +133,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         image.buildArgs = String.join(' ', [
                 globalBuildParams,
                 rawImageConfiguration.buildArguments,
-                "--file \"${fullDockerfile}\"",
+                "--file \"${rawImageConfiguration.dockerfile}\"",
                 "'${buildContext}'"
         ].findAll {
             !(it == null || it.trim().isEmpty())
