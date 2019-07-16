@@ -28,15 +28,19 @@ class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
     boolean push = true
 
     /**
-     * ID of username/password credentials to use to log into docker
+     * ID of username/password credentials to use to log into docker for pushing images.
      */
     String dockerCredentialsId = 'docker'
 
     /**
-     * docker run arguments applied to all images being built
+     * Arguments applied to the "{@code docker build}" command for every image built.
      */
     String globalBuildArguments = '--pull --progress \'plain\''
 
+    /**
+     * Configuration for the images to build.
+     * @see DockerMultiImagePipelineSingleImageConfiguration
+     */
     List<Closure> images = []
 
     void push(boolean push) {

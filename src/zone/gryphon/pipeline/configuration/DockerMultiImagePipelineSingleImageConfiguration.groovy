@@ -18,29 +18,32 @@ package zone.gryphon.pipeline.configuration
 class DockerMultiImagePipelineSingleImageConfiguration {
 
     /**
-     * Path in the repo to the Dockerfile to use for this build.
+     * [required] Path in the repo to the Dockerfile to use for this build.
      */
     String dockerfile
 
     /**
-     * name of docker artifact to publish.
+     * [required] name of docker artifact to publish.
      */
     String artifact
-
-    /**
-     * Additional hardcoded values to tag the built image as.
-     * Only applied if {@link zone.gryphon.pipeline.configuration.DockerMultiImagePipelineConfiguration#push} is true
-     * and the build is deployable.
-     */
-    List<String> additionalTags = []
-
-    String buildArguments = ''
 
     /**
      * Build context to use for the docker build command.
      * If not specified, defaults to the directory containing the {@link #dockerfile}.
      */
     String buildContext
+
+    /**
+     * Additional hardcoded values to tag the built image as.
+     * Only applied if {@link DockerMultiImagePipelineConfiguration#push} is true
+     * and the build is deployable.
+     */
+    List<String> additionalTags = []
+
+    /**
+     * Arguments to pass to the "{@code docker build}" command
+     */
+    String buildArguments = ''
 
     /**
      * Name of the dockerhub organization to public the image to
