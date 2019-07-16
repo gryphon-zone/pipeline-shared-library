@@ -44,13 +44,17 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     // there's no way to turn this fingerprinting off,
     // and it provides little value,
     // just invoke docker build ourselves.
+    log.info("Building ${buildImage}...")
+    long start = System.currentTimeMillis()
     util.sh("docker build -t ${buildImage} ${configuration.buildArgs}", returnType: 'none')
+    long duration = System.currentTimeMillis() - start
+    log.info("Built ${buildImage} in ${duration / 1000} seconds")
 
     // now that we've built the image, we can use the "docker" global variable to apply the tags.
-    // Note: applying a tag the image already has is a no-op
     def image = docker.image(buildImage)
     tags.eachWithIndex { tag, index ->
         if (index > 0) {
+            log.info("Tagging ${buildImage} with ${tag}")
             image.tag(tag)
         }
     }
