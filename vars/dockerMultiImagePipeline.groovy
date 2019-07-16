@@ -254,6 +254,7 @@ def call(String githubOrganization, Closure body) {
 
                 if (configuration.push) {
                     stage('Push Docker Images') {
+                        log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
                         scope.withDockerAuthentication(configuration.credentials) {
                             configuration.images.eachWithIndex { config, index ->
                                 push(config, tags[index])
