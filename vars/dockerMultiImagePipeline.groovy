@@ -79,6 +79,7 @@ private static String directoryOf(String path) {
 
 private static DockerMultiImagePipelineConfiguration validate(DockerMultiImagePipelineConfiguration config) {
     Objects.requireNonNull(config, 'Configuration may not be null')
+    Objects.requireNonNull(config.dockerCredentialsId, "Credentials ID may not be null")
     return config
 }
 
