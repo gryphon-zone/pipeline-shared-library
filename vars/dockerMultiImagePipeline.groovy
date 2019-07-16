@@ -243,18 +243,17 @@ def call(String githubOrganization, Closure body) {
 
                 Map<Integer, List<String>> tags = [:]
 
-                configuration.images.eachWithIndex { config, index ->
-                    stage("Build ${config.image}") {
+                stage('Build Docker Images') {
+                    configuration.images.eachWithIndex { config, index ->
                         tags[index] = build(config, defaultTags, shortHash)
                     }
                 }
 
-                configuration.images.eachWithIndex { config, index ->
-                    stage("Push ${config.image}") {
+                stage('Push Docker Images') {
+                    configuration.images.eachWithIndex { config, index ->
                         push(config, tags[index])
                     }
                 }
-
             }
         }
     }
