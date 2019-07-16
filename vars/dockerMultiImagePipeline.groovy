@@ -94,13 +94,14 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
     String globalBuildParams = automatedRun ? config.globalBuildArguments : "${params.globalBuildArguments}"
     boolean shouldPush = deployable && (automatedRun ? config.push : "${params.push}".toBoolean())
 
+    int index = 0
     out.images = config.images.collect { image ->
         DockerMultiImagePipelineSingleImageConfiguration imageConfig = helper.configure(image, new DockerMultiImagePipelineSingleImageConfiguration())
 
         EffectiveDockerMultiImagePipelineSingleImageConfiguration c = new EffectiveDockerMultiImagePipelineSingleImageConfiguration()
 
         String dockerOrg = imageConfig.dockerOrganization ?: defaultDockerOrganization
-        String dockerArtifact = Objects.requireNonNull(imageConfig.artifact, "image.artifact may not be null")
+        String dockerArtifact = Objects.requireNonNull(imageConfig.artifact, "images[${index}].artifact may not be null")
 
 
         c.image = "${dockerOrg}/${dockerArtifact}"
@@ -119,6 +120,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
             !(it == null || it.trim().isEmpty())
         })
 
+        index++
         return c
     }
 
