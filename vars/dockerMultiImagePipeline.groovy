@@ -25,14 +25,14 @@ import zone.gryphon.pipeline.toolbox.Util
  */
 
 private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags) {
+    final Util util = new Util()
     List<String> tags = []
     tags.addAll(defaultTags)
     tags.addAll(configuration.additionalTags)
 
     String buildImage = "${configuration.image}:${tags[0]}"
 
-    dockerImage = docker.build(buildImage, configuration.buildArgs)
-
+    util.sh("docker build -t ${buildImage} ${configuration.buildArgs}", returnType: 'none')
 
     echo "post build"
 
@@ -133,7 +133,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         image.buildArgs = String.join(' ', [
                 globalBuildParams,
                 rawImageConfiguration.buildArguments,
-                "--file ${rawImageConfiguration.dockerfile.replace(' ', '\\ ')}",
+                "--file '${rawImageConfiguration.dockerfile}'",
                 "'${buildContext}'"
         ].findAll {
             !(it == null || it.trim().isEmpty())
