@@ -139,8 +139,8 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ]
 
-    out.images.eachWithIndex { it, index ->
-        String key = "Configuration for image #${index + 1} (${it.image})"
+    out.images.eachWithIndex { it, idx ->
+        String key = "Configuration for image #${idx + 1} (${it.image})"
 
         String value = ''
         value += "  Image                 : ${it.image}\n"
