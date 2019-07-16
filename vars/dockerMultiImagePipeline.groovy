@@ -37,7 +37,9 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
         tags.add("${configuration.baseVersion}-${commitSha}")
     }
 
-    String tagsBuildArg = String.join(' ', tags.reverse().collect { "${configuration.image}:${it}" }.collect { "--tag '${it}'" })
+    Collections.reverse(tags)
+
+    String tagsBuildArg = String.join(' ', tags.collect { "${configuration.image}:${it}" }.collect { "--tag '${it}'" })
 
 
     // can't use the "docker" global variable to build the image because it will always throw an
