@@ -32,9 +32,23 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
 
     String buildImage = "${configuration.image}:${tags[0]}"
 
+    // can't use the "docker" global variable to build the image because it will always throw an
+    // an exception attempting to fingerprint the Dockerfile if the path to the Dockerfile contains any spaces.
+    //
+    // Since not supporting spaces in paths is ridiculous in the year of our lord 2019,
+    // there's no way to turn this fingerprinting off,
+    // and it provides little value,
+    // just invoke docker build ourselves.
     util.sh("docker build -t ${buildImage} ${configuration.buildArgs}", returnType: 'none')
 
-    echo "post build"
+    // now that we've built the image, we can use the "docker" global variable to apply the tags.
+    // Note: applying a tag the image already has is a no-op
+    def image = docker.image(buildImage)
+    tags.eachWithIndex { tag, index ->
+        if (index > 0) {
+            image.tag(tag)
+        }
+    }
 
     return tags
 }
