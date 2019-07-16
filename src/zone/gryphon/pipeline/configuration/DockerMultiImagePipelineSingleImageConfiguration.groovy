@@ -23,6 +23,11 @@ class DockerMultiImagePipelineSingleImageConfiguration {
     String dockerfile
 
     /**
+     * name of docker artifact to publish.
+     */
+    String artifact
+
+    /**
      * Additional hardcoded values to tag the built image as.
      * Only applied if {@link zone.gryphon.pipeline.configuration.DockerMultiImagePipelineConfiguration#push} is true
      * and the build is deployable.
@@ -41,11 +46,6 @@ class DockerMultiImagePipelineSingleImageConfiguration {
      * Name of the dockerhub organization to public the image to
      */
     String dockerOrganization
-
-    /**
-     * name of docker artifact to publish.
-     */
-    String artifact
 
     String version = '1.0'
 

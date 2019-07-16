@@ -48,10 +48,24 @@ private static String directoryOf(String path) {
     return path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : '.'
 }
 
+
+private static DockerMultiImagePipelineConfiguration validate(DockerMultiImagePipelineConfiguration config) {
+
+    return config
+}
+
+private static DockerMultiImagePipelineSingleImageConfiguration validate(DockerMultiImagePipelineSingleImageConfiguration config, int index, String keyPrefix) {
+    final String messagePrefix = "Configuration invalid: ${keyPrefix}[$index]"
+    Objects.requireNonNull(config, messagePrefix + " may not be null")
+    Objects.requireNonNull(config.dockerfile, messagePrefix + ".dockerfile may not be null")
+    Objects.requireNonNull(config.artifact, messagePrefix + ".artifact may not be null")
+    return config
+}
+
 private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String organization, Closure body) {
     final ConfigurationHelper helper = new ConfigurationHelper()
 
-    final DockerMultiImagePipelineConfiguration config = helper.configure(organization, body, new DockerMultiImagePipelineConfiguration())
+    final DockerMultiImagePipelineConfiguration config = validate(helper.configure(organization, body, new DockerMultiImagePipelineConfiguration()))
 
     final EffectiveDockerMultiImagePipelineConfiguration out = new EffectiveDockerMultiImagePipelineConfiguration()
 
@@ -94,39 +108,38 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
     String globalBuildParams = automatedRun ? config.globalBuildArguments : "${params.globalBuildArguments}"
     boolean shouldPush = deployable && (automatedRun ? config.push : "${params.push}".toBoolean())
 
-    int index = 0
-    out.images = config.images.collect { image ->
-        DockerMultiImagePipelineSingleImageConfiguration imageConfig = helper.configure(image, new DockerMultiImagePipelineSingleImageConfiguration())
+    out.images = []
+    out.buildAgent = config.buildAgent
+    out.push = shouldPush
+    out.timeoutMinutes = config.idleTimeout
 
-        EffectiveDockerMultiImagePipelineSingleImageConfiguration c = new EffectiveDockerMultiImagePipelineSingleImageConfiguration()
+    config.images.eachWithIndex { imageConfigurationClosure, index ->
+        DockerMultiImagePipelineSingleImageConfiguration rawImageConfiguration = validate(helper.configure(imageConfigurationClosure, new DockerMultiImagePipelineSingleImageConfiguration()), index, 'images')
 
-        String dockerOrg = imageConfig.dockerOrganization ?: defaultDockerOrganization
-        String dockerArtifact = Objects.requireNonNull(imageConfig.artifact, "images[${index}].artifact may not be null")
+        EffectiveDockerMultiImagePipelineSingleImageConfiguration image = new EffectiveDockerMultiImagePipelineSingleImageConfiguration()
 
+        String buildContext = rawImageConfiguration.buildContext ?: directoryOf(rawImageConfiguration.dockerfile)
+        String dockerOrg = rawImageConfiguration.dockerOrganization ?: defaultDockerOrganization
+        String dockerArtifact = rawImageConfiguration.artifact
 
-        c.image = "${dockerOrg}/${dockerArtifact}"
-        c.baseVersion = imageConfig.version ?: '1.0'
-        c.additionalTags = shouldPush ? imageConfig.additionalTags : []
-
-        String buildContext = imageConfig.buildContext ?: directoryOf(imageConfig.dockerfile)
+        image.image = "${dockerOrg}/${dockerArtifact}"
+        image.baseVersion = rawImageConfiguration.version ?: '1.0'
+        image.additionalTags = shouldPush ? rawImageConfiguration.additionalTags : []
 
         // add global and specific build args
-        c.buildArgs = String.join(' ', [
+        image.buildArgs = String.join(' ', [
                 globalBuildParams,
-                imageConfig.buildArguments,
-                "--file '${imageConfig.dockerfile}'",
+                rawImageConfiguration.buildArguments,
+                "--file '${rawImageConfiguration.dockerfile}'",
                 "'${buildContext}'"
         ].findAll {
             !(it == null || it.trim().isEmpty())
         })
 
-        index++
-        return c
+        // add image to list of images to be built
+        out.images.add(image)
     }
 
-    out.buildAgent = config.buildAgent
-    out.push = shouldPush
-    out.timeoutMinutes = config.idleTimeout
 
     Map printableConfiguration = [
             'Job is deployable'      : deployable,
@@ -139,13 +152,13 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ]
 
-    out.images.eachWithIndex { it, idx ->
-        String key = "Configuration for image #${idx + 1} (${it.image})"
+    out.images.eachWithIndex { image, index ->
+        String key = "Configuration for image #${index + 1} (${image.image})"
 
         String value = ''
-        value += "  Image                 : ${it.image}\n"
-        value += "  Build arguments       : ${it.buildArgs}\n"
-        value += "  Additional image tags : " + (it.additionalTags.isEmpty() ? '<none>' : String.join(', ', it.additionalTags))
+        value += "  Image                 : ${image.image}\n"
+        value += "  Build arguments       : ${image.buildArgs}\n"
+        value += "  Additional image tags : " + (image.additionalTags.isEmpty() ? '<none>' : String.join(', ', image.additionalTags))
 
         printableConfiguration[key] = value
     }
