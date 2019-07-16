@@ -63,8 +63,11 @@ private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration conf
 
     for (String tag : tags) {
         String name = "${configuration.image}:${tag}"
-        log.info("Pushing ${name}")
+        log.info("Pushing ${name}...")
+        long start = System.currentTimeMillis()
         util.sh("docker push '${name}'", returnType: 'none')
+        long duration = System.currentTimeMillis() - start
+        log.info("Pushed ${name} in ${duration / 1000} seconds")
     }
 }
 
