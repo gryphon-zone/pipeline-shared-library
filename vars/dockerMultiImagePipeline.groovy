@@ -37,7 +37,8 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
         tags.add("${configuration.baseVersion}-${commitSha}")
     }
 
-    String buildImage = "${configuration.image}:${tags[0]}"
+    String tagsBuildArg = String.join(' ', tags.collect { "${configuration.image}:${it}" }.collect { "--tag '${it}" })
+
 
     // can't use the "docker" global variable to build the image because it will always throw an
     // an exception attempting to fingerprint the Dockerfile if the path to the Dockerfile contains any spaces.
@@ -46,20 +47,11 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     // there's no way to turn this fingerprinting off,
     // and it provides little value,
     // just invoke docker build ourselves.
-    log.info("Building \"${c.bold(buildImage)}\"...")
+    log.info("Building \"${c.bold(configuration.image)}\"...")
     long start = System.currentTimeMillis()
-    util.sh("docker build -t ${buildImage} ${configuration.buildArgs}", returnType: 'none')
+    util.sh("docker build ${tagsBuildArg} ${configuration.buildArgs}", returnType: 'none')
     long duration = System.currentTimeMillis() - start
-    log.info("Built \"${c.bold(buildImage)}\" in ${duration / 1000} seconds")
-
-    // now that we've built the image, we can use the "docker" global variable to apply the tags.
-    def image = docker.image(buildImage)
-    tags.eachWithIndex { tag, index ->
-        if (index > 0) {
-            log.info("Tagging ${buildImage} with ${tag}")
-            image.tag(tag)
-        }
-    }
+    log.info("Built \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds")
 
     return tags
 }
