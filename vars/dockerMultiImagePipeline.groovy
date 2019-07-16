@@ -137,10 +137,12 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
     String globalBuildParams = automatedRun ? config.globalBuildArguments : "${params.globalBuildArguments}"
     boolean shouldPush = deployable && (automatedRun ? config.push : "${params.push}".toBoolean())
 
+
     out.images = []
-    out.buildAgent = config.buildAgent
     out.push = shouldPush
+    out.buildAgent = config.buildAgent
     out.timeoutMinutes = config.idleTimeout
+    out.credentials = config.dockerCredentialsId
 
     config.images.eachWithIndex { imageConfigurationClosure, index ->
         DockerMultiImagePipelineSingleImageConfiguration rawImageConfiguration = validate(helper.configure(imageConfigurationClosure, new DockerMultiImagePipelineSingleImageConfiguration()), index, 'images')
