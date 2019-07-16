@@ -45,7 +45,7 @@ class DockerMultiImagePipelineSingleImageConfiguration {
     /**
      * name of docker artifact to publish.
      */
-    String dockerArtifact
+    String artifact
 
     String version = '1.0'
 
@@ -69,8 +69,8 @@ class DockerMultiImagePipelineSingleImageConfiguration {
         this.dockerOrganization = dockerOrganization
     }
 
-    void dockerArtifact(String dockerArtifact) {
-        this.dockerArtifact = dockerArtifact
+    void artifact(String artifact) {
+        this.artifact = artifact
     }
 
     void version(String version) {

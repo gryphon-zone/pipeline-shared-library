@@ -100,7 +100,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         EffectiveDockerMultiImagePipelineSingleImageConfiguration c = new EffectiveDockerMultiImagePipelineSingleImageConfiguration()
 
         String dockerOrg = imageConfig.dockerOrganization ?: defaultDockerOrganization
-        String dockerArtifact = imageConfig.dockerArtifact
+        String dockerArtifact = Objects.requireNonNull(imageConfig.artifact, "image.artifact may not be null")
 
 
         c.image = "${dockerOrg}/${dockerArtifact}"
