@@ -251,9 +251,13 @@ def call(String githubOrganization, Closure body) {
                     }
                 }
 
-                stage('Push Docker Images') {
-                    configuration.images.eachWithIndex { config, index ->
-                        push(config, tags[index])
+                if (configuration.push) {
+                    stage('Push Docker Images') {
+                        scope.withDockerAuthentication(configuration.credentials) {
+                            configuration.images.eachWithIndex { config, index ->
+                                push(config, tags[index])
+                            }
+                        }
                     }
                 }
             }
