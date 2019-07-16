@@ -7,6 +7,7 @@ import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.DockerUtility
 import zone.gryphon.pipeline.toolbox.ScopeUtility
+import zone.gryphon.pipeline.toolbox.TextColor
 import zone.gryphon.pipeline.toolbox.Util
 
 /*
@@ -25,6 +26,7 @@ import zone.gryphon.pipeline.toolbox.Util
  */
 
 private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags, String commitSha) {
+    final TextColor c = TextColor.instance
     final Util util = new Util()
     List<String> tags = []
     tags.addAll(defaultTags)
@@ -44,11 +46,11 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     // there's no way to turn this fingerprinting off,
     // and it provides little value,
     // just invoke docker build ourselves.
-    log.info("Building ${buildImage}...")
+    log.info("Building \"${c.bold(buildImage)}\"...")
     long start = System.currentTimeMillis()
     util.sh("docker build -t ${buildImage} ${configuration.buildArgs}", returnType: 'none')
     long duration = System.currentTimeMillis() - start
-    log.info("Built ${buildImage} in ${duration / 1000} seconds")
+    log.info("Built \"${c.bold(buildImage)}\" in ${duration / 1000} seconds")
 
     // now that we've built the image, we can use the "docker" global variable to apply the tags.
     def image = docker.image(buildImage)
