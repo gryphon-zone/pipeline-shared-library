@@ -130,7 +130,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         image.buildArgs = String.join(' ', [
                 globalBuildParams,
                 rawImageConfiguration.buildArguments,
-                "--file '${rawImageConfiguration.dockerfile}'",
+                "--file \"${rawImageConfiguration.dockerfile}\"",
                 "'${buildContext}'"
         ].findAll {
             !(it == null || it.trim().isEmpty())
