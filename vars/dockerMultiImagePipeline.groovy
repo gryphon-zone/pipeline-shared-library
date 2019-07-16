@@ -24,11 +24,16 @@ import zone.gryphon.pipeline.toolbox.Util
  * limitations under the License.
  */
 
-private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags) {
+private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags, String commitSha) {
     final Util util = new Util()
     List<String> tags = []
     tags.addAll(defaultTags)
     tags.addAll(configuration.additionalTags)
+
+    // only add the versioned tag if the version is set
+    if (configuration.baseVersion) {
+        tags.add("${configuration.baseVersion}-${commitSha}")
+    }
 
     String buildImage = "${configuration.image}:${tags[0]}"
 
@@ -67,7 +72,7 @@ private static String directoryOf(String path) {
 
 
 private static DockerMultiImagePipelineConfiguration validate(DockerMultiImagePipelineConfiguration config) {
-
+    Objects.requireNonNull(config, 'Configuration may not be null')
     return config
 }
 
@@ -140,8 +145,14 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String dockerArtifact = rawImageConfiguration.artifact
 
         image.image = "${dockerOrg}/${dockerArtifact}"
-        image.baseVersion = rawImageConfiguration.version ?: '1.0'
-        image.additionalTags = shouldPush ? rawImageConfiguration.additionalTags : []
+
+        if (shouldPush) {
+            image.additionalTags = rawImageConfiguration.additionalTags
+            image.baseVersion = rawImageConfiguration.version
+        } else {
+            image.additionalTags = []
+            image.baseVersion = null
+        }
 
         // add global and specific build args
         image.buildArgs = String.join(' ', [
@@ -188,6 +199,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 def call(String githubOrganization, Closure body) {
     final EffectiveDockerMultiImagePipelineConfiguration configuration
     final CheckoutInformation checkoutInformation
+    final String shortHash
 
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
@@ -215,7 +227,7 @@ def call(String githubOrganization, Closure body) {
 
                     checkoutInformation = util.checkoutProject()
 
-                    String shortHash = Util.shortHash(checkoutInformation)
+                    shortHash = Util.shortHash(checkoutInformation)
 
                     String branchTag = "${info.branch}-${shortHash}"
 
@@ -229,7 +241,7 @@ def call(String githubOrganization, Closure body) {
 
                 configuration.images.eachWithIndex { config, index ->
                     stage("Build ${config.image}") {
-                        tags[index] = build(config, defaultTags)
+                        tags[index] = build(config, defaultTags, shortHash)
                     }
                 }
 
