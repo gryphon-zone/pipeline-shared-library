@@ -62,7 +62,9 @@ private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration conf
     DockerUtility d = new DockerUtility()
 
     for (String tag : tags) {
-        log.info("Pushing ${configuration.image}:${tag}")
+        String name = "${configuration.image}:${tag}"
+        log.info("Pushing ${name}")
+        docker.image(name).push()
     }
 }
 
