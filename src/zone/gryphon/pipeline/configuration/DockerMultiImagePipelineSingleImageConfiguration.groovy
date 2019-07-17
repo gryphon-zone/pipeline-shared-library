@@ -35,6 +35,7 @@ class DockerMultiImagePipelineSingleImageConfiguration {
 
     /**
      * Additional hardcoded values to tag the built image as.
+     *
      * Only applied if {@link DockerMultiImagePipelineConfiguration#push} is true
      * and the build is deployable.
      */
@@ -46,11 +47,21 @@ class DockerMultiImagePipelineSingleImageConfiguration {
     String buildArguments = ''
 
     /**
+     * Whether to tag the built image as "latest" or not.
+     *
+     * Only applicable if {@link DockerMultiImagePipelineConfiguration#push} is true
+     * and the build is deployable.
+     */
+    boolean tagAsLatest = true
+
+    /**
      * Name of the dockerhub organization to public the image to
      */
     String dockerOrganization
 
-    String version = '1.0'
+    void tagAsLatest(boolean tagAsLatest) {
+        this.tagAsLatest = tagAsLatest
+    }
 
     void dockerfile(String dockerfile) {
         this.dockerfile = dockerfile
@@ -74,10 +85,6 @@ class DockerMultiImagePipelineSingleImageConfiguration {
 
     void artifact(String artifact) {
         this.artifact = artifact
-    }
-
-    void version(String version) {
-        this.version = version
     }
 
 }

@@ -25,22 +25,13 @@ import zone.gryphon.pipeline.toolbox.Util
  * limitations under the License.
  */
 
-private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> defaultTags, String commitSha) {
+private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
     final TextColor c = TextColor.instance
     final Util util = new Util()
-    List<String> tags = []
-    tags.addAll(defaultTags)
-    tags.addAll(configuration.additionalTags)
 
-    // only add the versioned tag if the version is set
-    if (configuration.baseVersion) {
-        tags.add("${configuration.baseVersion}-${commitSha}")
-    }
-
-    Collections.reverse(tags)
-
-    String tagsBuildArg = String.join(' ', tags.collect { "${configuration.image}:${it}" }.collect { "--tag '${it}'" })
-
+    String buildTags = String.join(' ', configuration.tags
+            .collect { "${configuration.image}:${it}" }
+            .collect { "--tag '${it}'" })
 
     // can't use the "docker" global variable to build the image because it will always throw an
     // an exception attempting to fingerprint the Dockerfile if the path to the Dockerfile contains any spaces.
@@ -51,17 +42,15 @@ private List<String> build(EffectiveDockerMultiImagePipelineSingleImageConfigura
     // just invoke docker build ourselves.
     log.info("Building \"${c.bold(configuration.image)}\"...")
     long start = System.currentTimeMillis()
-    util.sh("docker build ${tagsBuildArg} ${configuration.buildArgs}", returnType: 'none')
+    util.sh("docker build ${buildTags} ${configuration.buildArgs}", returnType: 'none')
     long duration = System.currentTimeMillis() - start
     log.info("Built \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds")
-
-    return tags
 }
 
-private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration, List<String> tags) {
-    final Util util = new Util();
+private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
+    final Util util = new Util()
 
-    for (String tag : tags) {
+    for (String tag : configuration.tags) {
         String name = "${configuration.image}:${tag}"
         log.info("Pushing ${name}...")
         long start = System.currentTimeMillis()
@@ -153,13 +142,15 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String dockerArtifact = rawImageConfiguration.artifact
 
         image.image = "${dockerOrg}/${dockerArtifact}"
+        image.tags = []
 
         if (shouldPush) {
-            image.additionalTags = rawImageConfiguration.additionalTags
-            image.baseVersion = rawImageConfiguration.version
-        } else {
-            image.additionalTags = []
-            image.baseVersion = null
+
+            if (rawImageConfiguration.tagAsLatest) {
+                image.tags.add('latest')
+            }
+
+            image.tags.addAll(rawImageConfiguration.additionalTags)
         }
 
         // add global and specific build args
@@ -194,7 +185,7 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
         String value = ''
         value += "  Image                 : ${image.image}\n"
         value += "  Build arguments       : ${image.buildArgs}\n"
-        value += "  Additional image tags : " + (image.additionalTags.isEmpty() ? '<none>' : String.join(', ', image.additionalTags))
+        value += "  Additional image tags : " + (image.tags.isEmpty() ? '<none>' : String.join(', ', image.tags))
 
         printableConfiguration[key] = value
     }
@@ -207,11 +198,9 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 def call(String githubOrganization, Closure body) {
     final EffectiveDockerMultiImagePipelineConfiguration configuration
     final CheckoutInformation checkoutInformation
-    final String shortHash
 
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
-    final List<String> defaultTags = []
 
     final JobInformation info = util.getJobInformation()
 
@@ -235,21 +224,20 @@ def call(String githubOrganization, Closure body) {
 
                     checkoutInformation = util.checkoutProject()
 
-                    shortHash = Util.shortHash(checkoutInformation)
+                    String shortHash = Util.shortHash(checkoutInformation)
 
                     String branchTag = "${info.branch}-${shortHash}"
 
                     currentBuild.displayName = "${branchTag} (#${info.build})"
                     currentBuild.description = configuration.push ? "Release images" : "Build images"
 
-                    defaultTags.add(configuration.push ? 'latest' : branchTag)
+                    // now that we know it, add the branch tag to the list of image tags
+                    configuration.images.each {it.tags.add(branchTag)}
                 }
-
-                Map<Integer, List<String>> tags = [:]
 
                 stage('Build Docker Images') {
                     configuration.images.eachWithIndex { config, index ->
-                        tags[index] = build(config, defaultTags, shortHash)
+                        build(config)
                     }
                 }
 
@@ -258,7 +246,7 @@ def call(String githubOrganization, Closure body) {
                         log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
                         scope.withDockerAuthentication(configuration.credentials) {
                             configuration.images.eachWithIndex { config, index ->
-                                push(config, tags[index])
+                                push(config)
                             }
                         }
                     }
