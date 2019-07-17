@@ -38,15 +38,13 @@ String dockerImagesInfoForGivenTags(String image, List<String> tags) {
     final Util util = new Util()
     final String dockerImageName = "${image}:${tags[0]}"
 
-    // get the unique image ID
-    String dockerImageId = util.sh("docker images ${dockerImageName} --format '{{.ID}}' | head -n 1", quiet: true).trim()
-
-    // log the docker image data for all built tags
     String patterns = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
 
+    // get the unique image ID
     return util.sh("""\
+            imageId="\$(docker images ${dockerImageName} --format '{{.ID}}' | head -n 1)" && \
             docker images '${image}' |\
-            grep -E 'REPOSITORY|${dockerImageId}' |\
+            grep -E "REPOSITORY|\${imageId}" |\
             grep -P '(^REPOSITORY\\s+|${patterns})'\
             """, quiet: true).trim()
 
