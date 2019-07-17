@@ -52,15 +52,16 @@ private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration con
 }
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
+    final TextColor c = TextColor.instance
     final Util util = new Util()
 
     for (String tag : configuration.tags) {
         String name = "${configuration.image}:${tag}"
-        log.info("Pushing ${name}...")
+        log.info("Pushing \"${c.bold(name)}\"...")
         long start = System.currentTimeMillis()
         util.sh("docker push '${name}'", returnType: 'none')
         long duration = System.currentTimeMillis() - start
-        log.info("Pushed ${name} in ${duration / 1000} seconds")
+        log.info("Pushed  \"${c.bold(name)}\" in ${duration / 1000} seconds")
     }
 }
 
