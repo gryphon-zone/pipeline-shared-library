@@ -19,7 +19,7 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
     MavenLibraryPipelineConfiguration() {
         super()
-        this.buildAgent = 'gryphonzone/java:11-jdk'
+        this.buildAgent = 'gryphonzone/jenkins-build-agent-maven:java-11'
     }
 
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'

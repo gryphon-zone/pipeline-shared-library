@@ -19,7 +19,7 @@ class DockerPipelineConfiguration extends BasePipelineConfiguration {
 
     DockerPipelineConfiguration() {
         super()
-        this.buildAgent = 'gryphonzone/docker-cli:latest'
+        this.buildAgent = 'gryphonzone/jenkins-build-agent-docker:latest'
     }
 
     String buildArgs = '--pull --progress \'plain\''

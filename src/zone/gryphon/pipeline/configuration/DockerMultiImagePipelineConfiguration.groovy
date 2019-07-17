@@ -19,7 +19,7 @@ class DockerMultiImagePipelineConfiguration extends BasePipelineConfiguration {
 
     DockerMultiImagePipelineConfiguration() {
         super()
-        this.buildAgent = 'gryphonzone/docker-cli:latest'
+        this.buildAgent = 'gryphonzone/jenkins-build-agent-docker:latest'
     }
 
     /**
