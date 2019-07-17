@@ -17,10 +17,10 @@ package zone.gryphon.pipeline.configuration
 
 class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
-    /**
-     * Docker image to run maven build in
-     */
-    String buildAgent = 'gryphonzone/java:11-jdk'
+    MavenLibraryPipelineConfiguration() {
+        super()
+        this.buildAgent = 'gryphonzone/java:11-jdk'
+    }
 
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
