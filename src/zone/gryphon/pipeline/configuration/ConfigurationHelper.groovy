@@ -38,13 +38,13 @@ boolean isDeployable(BasePipelineConfiguration configuration, JobInformation inf
 }
 
 
-List calculateProperties(List providedProperties, Object... additionalProps) {
+List calculateProperties(BasePipelineConfiguration config, Object... additionalProps) {
     List props = []
 
     props.addAll(additionalProps)
 
-    if (providedProperties) {
-        props.addAll(providedProperties)
+    if (config.jobProperties) {
+        props.addAll(config.jobProperties)
     }
 
     int index = props.findIndexOf { it -> it.getSymbol() == 'buildDiscarder' }
@@ -52,6 +52,10 @@ List calculateProperties(List providedProperties, Object... additionalProps) {
     // no build discarder, install default
     if (index < 0) {
         props.add(buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '90', numToKeepStr: '100')))
+    }
+
+    if (!config.allowConcurrentBuilds) {
+        props.add(disableConcurrentBuilds())
     }
 
     return props

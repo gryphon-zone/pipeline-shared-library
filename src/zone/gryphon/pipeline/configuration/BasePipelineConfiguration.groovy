@@ -56,6 +56,8 @@ class BasePipelineConfiguration {
      */
     String deployableOrganization
 
+    boolean allowConcurrentBuilds = false
+
     void buildAgent(String buildAgent) {
         this.buildAgent = buildAgent
     }
@@ -70,6 +72,10 @@ class BasePipelineConfiguration {
 
     void deployableBranchRegex(String deployableBranchRegex) {
         this.deployableBranchRegex = deployableBranchRegex
+    }
+
+    void allowConcurrentBuilds(boolean allowConcurrentBuilds) {
+        this.allowConcurrentBuilds = allowConcurrentBuilds
     }
 
 

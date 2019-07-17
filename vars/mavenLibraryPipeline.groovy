@@ -210,7 +210,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organizatio
             name: 'mavenArguments'
     ))
 
-    List calculatedJobProperties = helper.calculateProperties(config.jobProperties, (Object) parameters(buildParameters))
+    List calculatedJobProperties = helper.calculateProperties(config, (Object) parameters(buildParameters))
 
     // set job properties
     //noinspection GroovyAssignabilityCheck
