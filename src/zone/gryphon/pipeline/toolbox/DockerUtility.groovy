@@ -45,7 +45,7 @@ String dockerImagesInfoForGivenTags(String image, List<String> tags) {
     String patterns = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
 
     return util.sh("""\
-            docker images '${configuration.image}' |\
+            docker images '${image}' |\
             grep -E 'REPOSITORY|${dockerImageId}' |\
             grep -P '(^REPOSITORY\\s+|${patterns})'\
             """, quiet: true).trim()
