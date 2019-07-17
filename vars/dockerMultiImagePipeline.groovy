@@ -25,6 +25,7 @@ import zone.gryphon.pipeline.toolbox.Util
  * limitations under the License.
  */
 
+@SuppressWarnings("GrMethodMayBeStatic")
 private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
     final TextColor c = TextColor.instance
     final Util util = new Util()
@@ -51,6 +52,7 @@ private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration con
     log.info("Successfully built the following images for \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds:\n${imageInfo}")
 }
 
+@SuppressWarnings("GrMethodMayBeStatic")
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
     final TextColor c = TextColor.instance
     final Util util = new Util()
@@ -202,12 +204,9 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(String
 
 def call(String githubOrganization, Closure body) {
     final EffectiveDockerMultiImagePipelineConfiguration configuration
-    final CheckoutInformation checkoutInformation
 
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
-
-    final JobInformation info = util.getJobInformation()
 
     // add standard pipeline wrappers.
     // this command also allocates a build agent for running the build.
@@ -227,21 +226,21 @@ def call(String githubOrganization, Closure body) {
                     // enable git color before performing checkout
                     util.enableGitColor()
 
-                    checkoutInformation = util.checkoutProject()
+                    CheckoutInformation checkoutInformation = util.checkoutProject()
 
-                    String shortHash = Util.shortHash(checkoutInformation)
+                    JobInformation info = util.getJobInformation()
 
-                    String branchTag = "${info.branch}-${shortHash}"
+                    String branchTag = "${info.branch}-${Util.shortHash(checkoutInformation)}"
 
                     currentBuild.displayName = "${branchTag} (#${info.build})"
                     currentBuild.description = configuration.push ? "Release images" : "Build images"
 
                     // now that we know it, add the branch tag to the list of image tags
-                    configuration.images.each {it.tags.add(branchTag)}
+                    configuration.images.each { it.tags.add(branchTag) }
                 }
 
                 stage('Build Docker Images') {
-                    configuration.images.eachWithIndex { config, index ->
+                    configuration.images.each { config ->
                         build(config)
                     }
                 }
@@ -250,7 +249,7 @@ def call(String githubOrganization, Closure body) {
                     stage('Push Docker Images') {
                         log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
                         scope.withDockerAuthentication(configuration.credentials) {
-                            configuration.images.eachWithIndex { config, index ->
+                            configuration.images.each { config ->
                                 push(config)
                             }
                         }
