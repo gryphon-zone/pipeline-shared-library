@@ -15,6 +15,8 @@
 
 package zone.gryphon.pipeline.toolbox
 
+import java.util.regex.Pattern
+
 String convertToDockerHubName(String name) {
     return name.replaceAll("\\W", "")
 }
@@ -25,4 +27,27 @@ String coordinatesFor(String org, String artifact, String tag) {
 
 String tag(String image, String tag) {
     return "${image}:${tag}"
+}
+
+String dockerImagesInfoForGivenTags(String image, List<String> tags) {
+
+    if (tags == null || tags.isEmpty()) {
+        return ""
+    }
+
+    final Util util = new Util()
+    final String dockerImageName = "${image}:${tags[0]}"
+
+    // get the unique image ID
+    String dockerImageId = util.sh("docker images ${dockerImageName} --format '{{.ID}}' | head -n 1", quiet: true).trim()
+
+    // log the docker image data for all built tags
+    String patterns = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
+
+    return util.sh("""\
+            docker images '${configuration.image}' |\
+            grep -E 'REPOSITORY|${dockerImageId}' |\
+            grep -P '(^REPOSITORY\\s+|${patterns})'\
+            """, quiet: true).trim()
+
 }

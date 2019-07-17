@@ -45,6 +45,10 @@ private void build(EffectiveDockerMultiImagePipelineSingleImageConfiguration con
     util.sh("docker build ${buildTags} ${configuration.buildArgs}", returnType: 'none')
     long duration = System.currentTimeMillis() - start
     log.info("Built \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds")
+
+    DockerUtility dockerUtility = new DockerUtility()
+    String imageInfo = dockerUtility.dockerImagesInfoForGivenTags(configuration.image, configuration.tags)
+    log.info("Built the following images for  \"${c.bold(configuration.image)}\":\n${imageInfo}")
 }
 
 private void push(EffectiveDockerMultiImagePipelineSingleImageConfiguration configuration) {
