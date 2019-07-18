@@ -36,4 +36,20 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
      */
     boolean automaticallyRelease = true
 
+    void junitResultsPattern(String junitResultsPattern) {
+        this.junitResultsPattern = junitResultsPattern
+    }
+
+    void mavenDeployArguments(String mavenDeployArguments) {
+        this.mavenDeployArguments = mavenDeployArguments
+    }
+
+    void mavenNonDeployArguments(String mavenNonDeployArguments) {
+        this.mavenNonDeployArguments = mavenNonDeployArguments
+    }
+
+    void automaticallyRelease(boolean automaticallyRelease) {
+        this.automaticallyRelease = automaticallyRelease
+    }
+
 }
