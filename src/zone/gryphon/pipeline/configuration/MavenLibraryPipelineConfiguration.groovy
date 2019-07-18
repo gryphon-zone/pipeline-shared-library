@@ -22,7 +22,7 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
         this.buildAgent = 'gryphonzone/jenkins-build-agent-maven:java-11'
     }
 
-    String junitResultsPattern = '**/target/test-reports/*.xml'
+    String junitResultsPattern = '**/target/surefire-reports/*.xml'
 
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
