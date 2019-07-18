@@ -89,7 +89,11 @@ private def performRelease(final Util util, final String releaseVersion, final S
 
 @SuppressWarnings("GrMethodMayBeStatic")
 private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
-    util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
+    try {
+        util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
+    } finally {
+        junit(allowEmptyResults: true, testResults: config.junitResultsPattern)
+    }
 }
 
 private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
@@ -122,8 +126,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         log.debug('Ensuring maven POM exists')
         if (!fileExists('pom.xml')) {
             log.error('no pom.xml found, aborting build')
-            currentBuild.result = 'UNSTABLE'
-            currentBuild.description = 'pom.xml not present in project root'
+            unstable('pom.xml not present in project root')
             abort = true
             return
         }
@@ -154,7 +157,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
         } catch (Exception e) {
             log.warn("Failed to calculate project dependencies: ${e}")
-            currentBuild.result = 'UNSTABLE'
+            unstable('Failed to calculate project dependencies')
         }
     }
 
@@ -218,6 +221,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organizatio
 
     finalConfig.buildAgent = config.buildAgent
     finalConfig.timeoutMinutes = config.idleTimeout
+    finalConfig.junitResultsPattern = config.junitResultsPattern
 
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
@@ -239,6 +243,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organizatio
             'Build agent'            : finalConfig.buildAgent,
             'Maven build arguments'  : finalConfig.mavenArguments,
             'Perform Maven release'  : finalConfig.performRelease,
+            'JUnit reports directory': finalConfig.junitResultsPattern,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 

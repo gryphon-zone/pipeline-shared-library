@@ -22,6 +22,8 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
         this.buildAgent = 'gryphonzone/jenkins-build-agent-maven:java-11'
     }
 
+    String junitResultsPattern = '**/target/surefire-reports/*.xml'
+
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
     String mavenNonDeployArguments = 'clean verify -Dstyle.color=always -V -B'
@@ -33,5 +35,21 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
      * Ignored if the branch being built does not match the deployableBranchRegex
      */
     boolean automaticallyRelease = true
+
+    void junitResultsPattern(String junitResultsPattern) {
+        this.junitResultsPattern = junitResultsPattern
+    }
+
+    void mavenDeployArguments(String mavenDeployArguments) {
+        this.mavenDeployArguments = mavenDeployArguments
+    }
+
+    void mavenNonDeployArguments(String mavenNonDeployArguments) {
+        this.mavenNonDeployArguments = mavenNonDeployArguments
+    }
+
+    void automaticallyRelease(boolean automaticallyRelease) {
+        this.automaticallyRelease = automaticallyRelease
+    }
 
 }
