@@ -18,6 +18,21 @@ package zone.gryphon.pipeline.model
 class CheckoutInformation {
 
     /**
+     * @param vars Variable returned by the command "{@code checkout scm}"
+     * @return Populated {@link CheckoutInformation}
+     */
+    static CheckoutInformation fromCheckoutVariables(def vars) {
+        final String unknown = 'unknown'
+        CheckoutInformation out = new CheckoutInformation()
+        out.gitBranch = vars.GIT_BRANCH ?: unknown
+        out.gitCommit = vars.GIT_COMMIT ?: unknown
+        out.gitPreviousCommit = vars.GIT_PREVIOUS_COMMIT ?: unknown
+        out.gitPreviousSuccessfulCommit = vars.GIT_PREVIOUS_SUCCESSFUL_COMMIT ?: unknown
+        out.gitUrl = vars.GIT_URL ?: unknown
+        return out
+    }
+
+    /**
      * The commit hash being checked out.
      */
     String gitCommit
@@ -38,33 +53,8 @@ class CheckoutInformation {
     String gitBranch
 
     /**
-     * The local branch name being checked out, if applicable.
-     */
-    String gitLocalBranch
-
-    /**
      * The remote URL. If there are multiple, will be GIT_URL_1, GIT_URL_2, etc.
      */
     String gitUrl
-
-    /**
-     * The configured Git committer name, if any.
-     */
-    String gitCommitterName
-
-    /**
-     * The configured Git author name, if any.
-     */
-    String gitAuthorName
-
-    /**
-     * The configured Git committer email, if any.
-     */
-    String gitCommitterEmail
-
-    /**
-     * The configured Git author email, if any.
-     */
-    String gitAuthorEmail
 
 }

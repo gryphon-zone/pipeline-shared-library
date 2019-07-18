@@ -131,13 +131,6 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
             return
         }
 
-        // needed to prevent failures when attempting to make commits
-        log.info('Configuring git author information')
-        util.sh("""\
-            git config user.email '${checkoutInformation.gitAuthorEmail}' && \
-            git config user.name '${checkoutInformation.gitAuthorName}'
-            """.stripIndent().trim(), returnType: 'none')
-
         // set up global maven settings
         util.configureMavenSettingsFile()
 
