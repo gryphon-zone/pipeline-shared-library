@@ -176,7 +176,7 @@ def call(String githubOrganization, Closure body) {
         }
 
         stage('Parse Configuration') {
-            log.info('Parsing build configuration')
+            log.info('Parsing build configuration...')
 
             configuration = parseConfiguration(githubOrganization, checkoutInformation, body)
         }

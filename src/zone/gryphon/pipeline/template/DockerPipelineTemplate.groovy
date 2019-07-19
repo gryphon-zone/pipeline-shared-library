@@ -35,6 +35,10 @@ class DockerPipelineTemplate {
 
     private final def context
 
+    /**
+     *
+     * @param context Jenkins script context, available using the keyword "{@code this}" to code running in a Jenkinsfile
+     */
     DockerPipelineTemplate(Object context) {
         this.context = Objects.requireNonNull(context, "Script context must be provided")
     }
