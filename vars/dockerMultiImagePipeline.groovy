@@ -181,7 +181,7 @@ def call(String githubOrganization, Closure body) {
             configuration = parseConfiguration(githubOrganization, checkoutInformation, body)
         }
 
-        new DockerPipelineTemplate().call(configuration)
+        new DockerPipelineTemplate(this).call(configuration)
     }
 }
 
