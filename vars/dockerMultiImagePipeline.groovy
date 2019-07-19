@@ -215,10 +215,14 @@ def call(String githubOrganization, Closure body) {
     scope.withStandardPipelineWrappers {
 
         stage('Checkout Project') {
+            log.info('Checking out project')
+
             checkoutInformation = util.checkoutProject()
         }
 
         stage('Parse Configuration') {
+            log.info('Parsing build configuration')
+
             configuration = parseConfiguration(githubOrganization, checkoutInformation, body)
         }
 
