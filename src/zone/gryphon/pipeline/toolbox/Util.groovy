@@ -26,6 +26,10 @@ static String entropy() {
     return UUID.randomUUID().toString().replace("-", "")
 }
 
+static String directoryOf(String path) {
+    return path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : '.'
+}
+
 /**
  * @param input The input list
  * @return A new list, containing all elements of the input which are neither null, nor made up entirely of whitespace

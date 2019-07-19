@@ -15,32 +15,21 @@
 
 package zone.gryphon.pipeline.configuration.effective
 
-class EffectiveDockerMultiImagePipelineConfiguration {
+class EffectiveDockerPipelineTemplateSingleImageConfiguration {
 
     /**
-     * Maximum number of minutes build can be idle before it's timed out
+     * Docker image (AKA repository), e.g. "foo/bar"
      */
-    int timeoutMinutes
+    String image
 
     /**
-     * ID of the credentials on the Jenkins master to use.
-     * Only used if {@link #push} is true
+     * Arguments for the docker build command
      */
-    String credentials
+    String buildArgs
 
     /**
-     * Whether the generated image should be pushed to remote repository
+     * The tags to apply to the image
      */
-    boolean push
-
-    /**
-     * Docker image to run build in
-     */
-    String buildAgent
-
-    /**
-     * Configuration for each individual image
-     */
-    List<EffectiveDockerMultiImagePipelineSingleImageConfiguration> images
+    List<String> tags
 
 }
