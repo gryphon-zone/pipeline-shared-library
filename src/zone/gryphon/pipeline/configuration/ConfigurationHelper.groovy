@@ -37,8 +37,18 @@ boolean isDeployable(BasePipelineConfiguration configuration, JobInformation inf
     return (configuration.deployableOrganization == info.organization) && (info.branch.matches(configuration.deployableBranchRegex))
 }
 
+List calculateAndAssignJobProperties(BasePipelineConfiguration config, Object... additionalProps) {
 
-List calculateProperties(BasePipelineConfiguration config, Object... additionalProps) {
+    List calculatedJobProperties = calculateJobProperties(config, additionalProps)
+
+    // set job properties
+    //noinspection GroovyAssignabilityCheck
+    properties(calculatedJobProperties)
+
+    return calculatedJobProperties;
+}
+
+List calculateJobProperties(BasePipelineConfiguration config, Object... additionalProps) {
     List props = []
 
     props.addAll(additionalProps)

@@ -26,6 +26,16 @@ static String entropy() {
     return UUID.randomUUID().toString().replace("-", "")
 }
 
+/**
+ * @param input The input list
+ * @return A new list, containing all elements of the input which are neither null, nor made up entirely of whitespace
+ */
+static List<String> nonEmpty(List<String> input) {
+    return input.findAll {
+        !(it == null || it.trim().isEmpty())
+    }
+}
+
 static String shortHash(CheckoutInformation checkoutInformation) {
     return checkoutInformation.gitCommit.substring(0, 7)
 }
@@ -118,7 +128,12 @@ JobInformation getJobInformation() {
     return out
 }
 
-CheckoutInformation checkoutProject() {
+CheckoutInformation checkoutProject(boolean enableColor = true) {
+
+    if (enableColor) {
+        this.enableGitColor()
+    }
+
     def vars = checkout(scm)
 
     // needed to prevent failures when attempting to make commits
