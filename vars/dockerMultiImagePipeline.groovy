@@ -154,22 +154,20 @@ private EffectiveDockerMultiImagePipelineConfiguration parseConfiguration(
 
         if (out.push) {
 
+            image.tags.addAll(rawImageConfiguration.additionalTags)
+
             if (rawImageConfiguration.tagAsLatest) {
                 image.tags.add('latest')
             }
-
-            image.tags.addAll(rawImageConfiguration.additionalTags)
         }
 
         // add global and specific build args
-        image.buildArgs = String.join(' ', [
+        image.buildArgs = String.join(' ', Util.nonEmpty([
                 globalBuildParams,
                 rawImageConfiguration.buildArguments,
                 "--file '${rawImageConfiguration.dockerfile}'",
                 "'${buildContext}'"
-        ].findAll {
-            !(it == null || it.trim().isEmpty())
-        })
+        ]))
 
         // add image to list of images to be built
         out.images.add(image)
