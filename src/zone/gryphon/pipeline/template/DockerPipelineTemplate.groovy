@@ -33,6 +33,12 @@ class DockerPipelineTemplate {
 
     private final DockerUtility dockerUtility = new DockerUtility()
 
+    private final def context
+
+    DockerPipelineTemplate(Object context) {
+        this.context = Objects.requireNonNull(context, "Script context must be provided")
+    }
+
     def call(EffectiveDockerPipelineTemplateConfiguration configuration) {
 
         // kill build if it goes longer than a given number of minutes without logging anything
@@ -41,16 +47,16 @@ class DockerPipelineTemplate {
             // run build inside of docker build image
             scope.inDockerImage(configuration.buildAgent) {
 
-                stage(configuration.buildStageName) {
+                context.stage(configuration.buildStageName) {
                     configuration.images.each { config ->
                         build(config)
                     }
                 }
 
                 if (configuration.push) {
-                    stage(configuration.pushStageName) {
+                    context.stage(configuration.pushStageName) {
 
-                        log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
+                        context.log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
 
                         scope.withDockerAuthentication(configuration.credentials) {
                             configuration.images.each { config ->
@@ -77,14 +83,14 @@ class DockerPipelineTemplate {
         // there's no way to turn this fingerprinting off,
         // and it provides little value,
         // just invoke docker build ourselves.
-        log.info("Building \"${c.bold(configuration.image)}\"...")
+        context.log.info("Building \"${c.bold(configuration.image)}\"...")
         long start = System.currentTimeMillis()
         util.sh("docker build ${buildTags} ${configuration.buildArgs}", returnType: 'none')
         long duration = System.currentTimeMillis() - start
 
         String imageInfo = dockerUtility.dockerImagesInfoForGivenTags(configuration.image, configuration.tags)
 
-        log.info("Successfully built the following images for \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds:\n${imageInfo}")
+        context.log.info("Successfully built the following images for \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds:\n${imageInfo}")
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -94,11 +100,11 @@ class DockerPipelineTemplate {
 
         for (String tag : configuration.tags) {
             String name = "${configuration.image}:${tag}"
-            log.info("Pushing \"${c.bold(name)}\"...")
+            context.log.info("Pushing \"${c.bold(name)}\"...")
             long start = System.currentTimeMillis()
             util.sh("docker push '${name}'", returnType: 'none')
             long duration = System.currentTimeMillis() - start
-            log.info("Pushed  \"${c.bold(name)}\" in ${duration / 1000} seconds")
+            context.log.info("Pushed  \"${c.bold(name)}\" in ${duration / 1000} seconds")
         }
     }
 
