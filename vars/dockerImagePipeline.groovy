@@ -59,7 +59,7 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String orga
         )
     }
 
-    List calculatedJobProperties = helper.calculateProperties(config, (Object) parameters(buildParameters))
+    List calculatedJobProperties = helper.calculateJobProperties(config, (Object) parameters(buildParameters))
 
     // set job properties
     //noinspection GroovyAssignabilityCheck

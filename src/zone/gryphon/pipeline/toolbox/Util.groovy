@@ -118,7 +118,12 @@ JobInformation getJobInformation() {
     return out
 }
 
-CheckoutInformation checkoutProject() {
+CheckoutInformation checkoutProject(boolean enableColor = true) {
+
+    if (enableColor) {
+        this.enableGitColor()
+    }
+
     def vars = checkout(scm)
 
     // needed to prevent failures when attempting to make commits
