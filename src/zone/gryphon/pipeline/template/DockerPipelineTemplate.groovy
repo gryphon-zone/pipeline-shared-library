@@ -41,10 +41,11 @@ class DockerPipelineTemplate {
      */
     DockerPipelineTemplate(Object context) {
         this.context = Objects.requireNonNull(context, "Script context must be provided")
-        context.log.info("Type of script context: ${context.class.name}")
     }
 
     def call(EffectiveDockerPipelineTemplateConfiguration configuration) {
+
+        context.log.info("Type of script context: ${context.class.name}")
 
         // kill build if it goes longer than a given number of minutes without logging anything
         scope.withTimeout(configuration.timeoutMinutes) {
