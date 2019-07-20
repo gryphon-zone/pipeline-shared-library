@@ -18,6 +18,7 @@ package zone.gryphon.pipeline.template
 
 import zone.gryphon.pipeline.configuration.effective.EffectiveDockerPipelineTemplateConfiguration
 import zone.gryphon.pipeline.configuration.effective.EffectiveDockerPipelineTemplateSingleImageConfiguration
+import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.toolbox.DockerUtility
 import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.TextColor
@@ -43,35 +44,58 @@ class DockerPipelineTemplate {
         this.context = Objects.requireNonNull(context, "Script context must be provided")
     }
 
-    def call(EffectiveDockerPipelineTemplateConfiguration configuration) {
+    def call(Closure<EffectiveDockerPipelineTemplateConfiguration> configurationClosure) {
+        Objects.requireNonNull(configurationClosure, "Configuration closure must be provided")
+        configurationClosure.resolveStrategy = Closure.OWNER_FIRST
+        configurationClosure.delegate = this
 
-        context.log.info("Type of script context: ${context.class}")
+        final EffectiveDockerPipelineTemplateConfiguration configuration
+        final CheckoutInformation checkoutInformation
 
-        // kill build if it goes longer than a given number of minutes without logging anything
-        scope.withTimeout(configuration.timeoutMinutes) {
+        // add standard pipeline wrappers, and allocate default build executor (node)
+        scope.withStandardPipelineWrappers {
 
-            // run build inside of docker build image
-            scope.inDockerImage(configuration.buildAgent) {
+            context.stage('Checkout Project') {
+                context.log.info('Checking out project...')
 
-                context.stage(configuration.buildStageName) {
-                    configuration.images.each { config ->
-                        build(config)
+                checkoutInformation = util.checkoutProject()
+            }
+
+            context.stage('Parse Configuration') {
+                context.log.info('Parsing build configuration...')
+
+                configuration = configurationClosure.call(checkoutInformation)
+            }
+
+            context.log.info("Configuring build idle timeout...")
+
+            // kill build if it goes longer than a given number of minutes without logging anything
+            scope.withTimeout(configuration.timeoutMinutes) {
+
+                // run build inside of docker build image
+                scope.inDockerImage(configuration.buildAgent) {
+
+                    context.stage(configuration.buildStageName) {
+                        configuration.images.each { config ->
+                            build(config)
+                        }
                     }
-                }
 
-                if (configuration.push) {
-                    context.stage(configuration.pushStageName) {
+                    if (configuration.push) {
+                        context.stage(configuration.pushStageName) {
 
-                        context.log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
+                            context.log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
 
-                        scope.withDockerAuthentication(configuration.credentials) {
-                            configuration.images.each { config ->
-                                push(config)
+                            scope.withDockerAuthentication(configuration.credentials) {
+                                configuration.images.each { config ->
+                                    push(config)
+                                }
                             }
                         }
                     }
                 }
             }
+
         }
     }
 

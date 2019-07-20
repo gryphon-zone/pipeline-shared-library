@@ -7,7 +7,6 @@ import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.template.DockerPipelineTemplate
 import zone.gryphon.pipeline.toolbox.DockerUtility
-import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
 /*
@@ -160,28 +159,8 @@ private EffectiveDockerPipelineTemplateConfiguration parseConfiguration(
 }
 
 def call(String githubOrganization, Closure body) {
-    final EffectiveDockerPipelineTemplateConfiguration configuration
-    final CheckoutInformation checkoutInformation
-
-    final ScopeUtility scope = new ScopeUtility()
-    final Util util = new Util()
-
-    // add standard pipeline wrappers, and allocate default build executor (node)
-    scope.withStandardPipelineWrappers {
-
-        stage('Checkout Project') {
-            log.info('Checking out project')
-
-            checkoutInformation = util.checkoutProject()
-        }
-
-        stage('Parse Configuration') {
-            log.info('Parsing build configuration...')
-
-            configuration = parseConfiguration(githubOrganization, checkoutInformation, body)
-        }
-
-        new DockerPipelineTemplate(this).call(configuration)
-    }
+    new DockerPipelineTemplate(this).call({
+        CheckoutInformation scmInfo -> return parseConfiguration(githubOrganization, scmInfo, body)
+    })
 }
 
