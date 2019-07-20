@@ -41,6 +41,7 @@ class DockerPipelineTemplate {
      */
     DockerPipelineTemplate(Object context) {
         this.context = Objects.requireNonNull(context, "Script context must be provided")
+        context.log.info("Type of script context: ${context.class.name}")
     }
 
     def call(EffectiveDockerPipelineTemplateConfiguration configuration) {
