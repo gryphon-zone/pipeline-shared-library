@@ -75,7 +75,13 @@ class DockerPipelineTemplate {
 
                     context.stage(configuration.buildStageName) {
                         configuration.images.eachWithIndex { image, index ->
-                            context.log.info("Building image ${index + 1} of ${configuration.images.size()}...")
+                            context.log.info("Building \"" +
+                                    text.bold(image.image) +
+                                    "\" (image " +
+                                    text.bold(Integer.toString(index + 1)) +
+                                    " of " +
+                                    text.bold(Integer.toString(configuration.images.size())) +
+                                    ")...")
                             build(image)
                         }
                     }
@@ -113,8 +119,6 @@ class DockerPipelineTemplate {
         // there's no way to turn this fingerprinting off,
         // and it provides little value,
         // just invoke docker build ourselves.
-        context.log.info("Building \"${text.bold(configuration.image)}\"...")
-
         long start = System.currentTimeMillis()
         util.sh("docker build ${imageTagArguments} ${configuration.buildArgs}", returnType: 'none')
         long duration = System.currentTimeMillis() - start
