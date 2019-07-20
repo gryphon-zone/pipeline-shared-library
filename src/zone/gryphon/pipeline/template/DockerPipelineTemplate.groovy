@@ -26,7 +26,7 @@ import zone.gryphon.pipeline.toolbox.Util
 
 class DockerPipelineTemplate {
 
-    private final TextColor c = TextColor.instance
+    private final TextColor text = TextColor.instance
 
     private final ScopeUtility scope = new ScopeUtility()
 
@@ -68,16 +68,15 @@ class DockerPipelineTemplate {
             }
 
             context.log.info("Configuring build idle timeout...")
-
-            // kill build if it goes longer than a given number of minutes without logging anything
             scope.withTimeout(configuration.timeoutMinutes) {
 
-                // run build inside of docker build image
+                context.log.info("Running build inside of \"${configuration.buildAgent}\"...")
                 scope.inDockerImage(configuration.buildAgent) {
 
                     context.stage(configuration.buildStageName) {
-                        configuration.images.each { config ->
-                            build(config)
+                        configuration.images.eachWithIndex { image, index ->
+                            context.log.info("Building image ${index + 1} of ${configuration.images.size()}...")
+                            build(image)
                         }
                     }
 
@@ -87,8 +86,9 @@ class DockerPipelineTemplate {
                             context.log.info("Using credentials \"${configuration.credentials}\" for pushing Docker images")
 
                             scope.withDockerAuthentication(configuration.credentials) {
-                                configuration.images.each { config ->
-                                    push(config)
+                                configuration.images.eachWithIndex { image, index ->
+                                    context.log.info("Pushing image ${index + 1} of ${configuration.images.size()}...")
+                                    push(image)
                                 }
                             }
                         }
@@ -102,9 +102,9 @@ class DockerPipelineTemplate {
     @SuppressWarnings("GrMethodMayBeStatic")
     private void build(EffectiveDockerPipelineTemplateSingleImageConfiguration configuration) {
 
-        String buildTags = String.join(' ', configuration.tags
-                .collect { "${configuration.image}:${it}" }
-                .collect { "--tag '${it}'" })
+        String imageTagArguments = String.join(' ', configuration.tags
+                .collect { tag -> dockerUtility.tag(configuration.image, tag) }
+                .collect { tag -> "--tag '${tag}'" })
 
         // can't use the "docker" global variable to build the image because it will always throw an
         // an exception attempting to fingerprint the Dockerfile if the path to the Dockerfile contains any spaces.
@@ -113,14 +113,15 @@ class DockerPipelineTemplate {
         // there's no way to turn this fingerprinting off,
         // and it provides little value,
         // just invoke docker build ourselves.
-        context.log.info("Building \"${c.bold(configuration.image)}\"...")
+        context.log.info("Building \"${text.bold(configuration.image)}\"...")
+
         long start = System.currentTimeMillis()
-        util.sh("docker build ${buildTags} ${configuration.buildArgs}", returnType: 'none')
+        util.sh("docker build ${imageTagArguments} ${configuration.buildArgs}", returnType: 'none')
         long duration = System.currentTimeMillis() - start
 
         String imageInfo = dockerUtility.dockerImagesInfoForGivenTags(configuration.image, configuration.tags)
 
-        context.log.info("Successfully built the following images for \"${c.bold(configuration.image)}\" in ${duration / 1000} seconds:\n${imageInfo}")
+        context.log.info("Successfully built the following images for \"${text.bold(configuration.image)}\" in ${duration / 1000} seconds:\n${imageInfo}")
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -129,11 +130,14 @@ class DockerPipelineTemplate {
         final Util util = new Util()
 
         for (String tag : configuration.tags) {
-            String name = "${configuration.image}:${tag}"
+            String name = dockerUtility.tag(configuration.image, tag)
+
             context.log.info("Pushing \"${c.bold(name)}\"...")
+
             long start = System.currentTimeMillis()
             util.sh("docker push '${name}'", returnType: 'none')
             long duration = System.currentTimeMillis() - start
+
             context.log.info("Pushed  \"${c.bold(name)}\" in ${duration / 1000} seconds")
         }
     }
