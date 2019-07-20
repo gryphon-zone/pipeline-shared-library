@@ -111,6 +111,10 @@ private EffectiveDockerPipelineTemplateConfiguration parseConfiguration(
         }
     }
 
+    // set build information
+    currentBuild.displayName = "${image.image}:${branchTag} (#${info.build})"
+    currentBuild.description = out.push ? out.pushStageName : out.buildStageName
+
     helper.printConfiguration([
             'Job is deployable'      : deployable,
             'Deployable organization': organization,

@@ -129,7 +129,7 @@ private EffectiveDockerPipelineTemplateConfiguration parseConfiguration(
 
     // set build information
     currentBuild.displayName = "${branchTag} (#${info.build})"
-    currentBuild.description = out.push ? "Release images" : "Build images"
+    currentBuild.description = out.push ? out.pushStageName : out.buildStageName
 
     final Map printableConfiguration = [
             'Job is deployable'      : deployable,
