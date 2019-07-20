@@ -87,7 +87,7 @@ class DockerPipelineTemplate {
 
                             scope.withDockerAuthentication(configuration.credentials) {
                                 configuration.images.eachWithIndex { image, index ->
-                                    context.log.info("Pushing image ${index + 1} of ${configuration.images.size()}...")
+                                    context.log.info("Pushing \"${text.bold(image.image)}\" (image ${index + 1} of ${configuration.images.size()})...")
                                     push(image)
                                 }
                             }
@@ -129,8 +129,6 @@ class DockerPipelineTemplate {
 
         for (String tag : configuration.tags) {
             String name = dockerUtility.tag(configuration.image, tag)
-
-            context.log.info("Pushing \"${c.bold(name)}\"...")
 
             long start = System.currentTimeMillis()
             util.sh("docker push '${name}'", returnType: 'none')
