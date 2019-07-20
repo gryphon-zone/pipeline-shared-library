@@ -75,13 +75,7 @@ class DockerPipelineTemplate {
 
                     context.stage(configuration.buildStageName) {
                         configuration.images.eachWithIndex { image, index ->
-                            context.log.info("Building \"" +
-                                    text.bold(image.image) +
-                                    "\" (image " +
-                                    text.bold(Integer.toString(index + 1)) +
-                                    " of " +
-                                    text.bold(Integer.toString(configuration.images.size())) +
-                                    ")...")
+                            context.log.info("Building \"${text.bold(image.image)}\" (image ${index + 1} of ${configuration.images.size()})...")
                             build(image)
                         }
                     }
