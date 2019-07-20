@@ -15,34 +15,21 @@
 
 package zone.gryphon.pipeline.configuration.effective
 
-class EffectiveDockerImagePipelineConfiguration {
+class EffectiveDockerPipelineTemplateSingleImageConfiguration {
 
+    /**
+     * Docker image (AKA repository), e.g. "foo/bar"
+     */
     String image
 
+    /**
+     * Arguments for the docker build command
+     */
     String buildArgs
 
-    String buildContext
-
-    String credentials
-
     /**
-     * Base version for the docker image, usually some form of semVer.
+     * The tags to apply to the image
      */
-    String baseVersion
-
-    /**
-     * Whether the generated image should be pushed to remote repository
-     */
-    boolean push
-
-    /**
-     * Maximum number of minutes build can be idle before it's timed out
-     */
-    int timeoutMinutes
-
-    /**
-     * Docker image to run build in
-     */
-    String buildAgent
+    List<String> tags
 
 }

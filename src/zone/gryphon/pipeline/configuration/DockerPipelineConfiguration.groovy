@@ -24,9 +24,15 @@ class DockerPipelineConfiguration extends BasePipelineConfiguration {
 
     String buildArgs = '--pull --progress \'plain\''
 
-    String buildContext = '.'
+    String dockerfile = 'Dockerfile'
+
+    List<String> tags = []
+
+    String buildContext = null
 
     boolean pushImage = true
+
+    boolean tagAsLatest = true
 
     /**
      * Name of the dockerhub organization to public the image to

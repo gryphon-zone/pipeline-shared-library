@@ -16,38 +16,53 @@
 
 import zone.gryphon.pipeline.configuration.ConfigurationHelper
 import zone.gryphon.pipeline.configuration.DockerPipelineConfiguration
-import zone.gryphon.pipeline.configuration.effective.EffectiveDockerImagePipelineConfiguration
+import zone.gryphon.pipeline.configuration.effective.EffectiveDockerPipelineTemplateConfiguration
+import zone.gryphon.pipeline.configuration.effective.EffectiveDockerPipelineTemplateSingleImageConfiguration
 import zone.gryphon.pipeline.model.CheckoutInformation
 import zone.gryphon.pipeline.model.JobInformation
+import zone.gryphon.pipeline.template.DockerPipelineTemplate
 import zone.gryphon.pipeline.toolbox.DockerUtility
-import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
-import java.util.regex.Pattern
+private static DockerPipelineConfiguration validate(DockerPipelineConfiguration config) {
+    Objects.requireNonNull(config, 'Configuration may not be null')
+    Objects.requireNonNull(config.dockerCredentialsId, "Credentials ID may not be null")
+    return config
+}
 
-private EffectiveDockerImagePipelineConfiguration parseConfiguration(String organization, Closure body) {
+private EffectiveDockerPipelineTemplateConfiguration parseConfiguration(
+        String organization,
+        CheckoutInformation checkoutInformation,
+        Closure body) {
+
+    // utilities
     final ConfigurationHelper helper = new ConfigurationHelper()
-
-    final DockerPipelineConfiguration config = helper.configure(organization, body, new DockerPipelineConfiguration())
-    final EffectiveDockerImagePipelineConfiguration out = new EffectiveDockerImagePipelineConfiguration()
-
     final Util util = new Util()
     final DockerUtility dockerUtilities = new DockerUtility()
 
+    // info
+    final DockerPipelineConfiguration config = validate(helper.configure(organization, body, new DockerPipelineConfiguration()))
     final JobInformation info = util.getJobInformation()
+    final String defaultDockerOrganization = dockerUtilities.convertToDockerHubName(info.organization)
+    final String buildContext = config.buildContext ?: Util.directoryOf(config.dockerfile)
+    final String branchTag = "${info.branch}-${Util.shortHash(checkoutInformation)}"
+    final boolean deployable = helper.isDeployable(config, info)
+    final boolean automatedRun = util.buildWasTriggerByCommit()
 
-    boolean deployable = helper.isDeployable(config, info)
-    String dockerOrganization = config.dockerOrganization ?: dockerUtilities.convertToDockerHubName(info.organization)
+    // configuration
+    final List buildParameters = []
+
+    String dockerOrganization = config.dockerOrganization ?: defaultDockerOrganization
     String artifact = config.dockerArtifact ?: info.repository
 
-    List buildParameters = [
+    buildParameters.add(
             string(
                     defaultValue: config.buildArgs,
                     description: 'Arguments to pass to the "docker build" command',
                     name: 'buildArgs',
                     trim: true
             )
-    ]
+    )
 
     if (deployable) {
         buildParameters.add(
@@ -59,147 +74,67 @@ private EffectiveDockerImagePipelineConfiguration parseConfiguration(String orga
         )
     }
 
-    List calculatedJobProperties = helper.calculateJobProperties(config, (Object) parameters(buildParameters))
+    List calculatedJobProperties = helper.calculateAndAssignJobProperties(config, (Object) parameters(buildParameters))
 
-    // set job properties
-    //noinspection GroovyAssignabilityCheck
-    properties(calculatedJobProperties)
+    final EffectiveDockerPipelineTemplateConfiguration out = new EffectiveDockerPipelineTemplateConfiguration()
+    final EffectiveDockerPipelineTemplateSingleImageConfiguration image = new EffectiveDockerPipelineTemplateSingleImageConfiguration()
 
-    if (util.buildWasTriggerByCommit()) {
-        // SCM change triggered build, use the parameter definitions from the configuration
-        out.buildArgs = config.buildArgs
-        out.push = deployable && config.pushImage
-    } else {
-        // manual build, use the values passed in the parameters
-        out.buildArgs = "${params.buildArgs}"
-        out.push = deployable && "${params.push}".toBoolean()
-    }
+    final boolean deployRequested = "${(automatedRun ? config.pushImage : params.push)}".toBoolean()
+    final String buildArgs = "${automatedRun ? config.buildArgs : params.buildArgs}"
 
-    out.image = "${dockerOrganization}/${artifact}"
+    out.buildStageName = 'Build Image'
+    out.pushStageName = 'Push Image'
+
+    out.images = [image]
+    out.push = deployable && deployRequested
+
+    out.credentials = config.dockerCredentialsId
     out.buildAgent = config.buildAgent
-    out.buildContext = config.buildContext
-    out.baseVersion = config.version
     out.timeoutMinutes = config.idleTimeout
 
-    // credentials may be configurable in the future
-    out.credentials = 'docker'
+    image.tags = [branchTag]
+    image.image = "${dockerOrganization}/${artifact}"
+    image.buildArgs = String.join(" ", Util.nonEmpty([
+            buildArgs,
+            "--file '${config.dockerfile}'",
+            "'${buildContext}'"
+    ]))
+
+    if (out.push) {
+
+        if (config.tags) {
+            image.tags.addAll(config.tags)
+        }
+
+        if (config.tagAsLatest) {
+            image.tags.add('latest')
+        }
+    }
+
+    // set build information
+    currentBuild.displayName = "${image.image}:${branchTag} (#${info.build})"
+    currentBuild.description = out.push ? out.pushStageName : out.buildStageName
 
     helper.printConfiguration([
             'Job is deployable'      : deployable,
             'Deployable organization': organization,
             'Deployable branches'    : config.deployableBranchRegex,
+            'Push built images'      : out.push,
             'SCM organization'       : info.organization,
             'SCM repository'         : info.repository,
             'SCM branch'             : info.branch,
-            'Build agent'            : out.buildAgent,
-            'Docker image'           : out.image,
-            'Docker build arguments' : out.buildArgs,
-            'Docker build context'   : out.buildContext,
-            'Push built image'       : out.push,
+            'Docker image'           : image.image,
+            'Docker build arguments' : image.buildArgs,
+            'Docker image tags'      : String.join(', ', image.tags),
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
     return out
 }
 
-private void build(final EffectiveDockerImagePipelineConfiguration configuration) {
-    final CheckoutInformation checkoutInformation
-    final Util util = new Util()
-    final DockerUtility dockerUtilities = new DockerUtility()
-    final JobInformation info = util.getJobInformation()
-    final ScopeUtility scope = new ScopeUtility()
-    final List<String> tags = []
-    final String dockerImageName
-    def dockerImage
-
-    stage('Checkout Project') {
-        // enable git color before performing checkout
-        util.enableGitColor()
-
-        checkoutInformation = util.checkoutProject()
-    }
-
-    stage('Configure Project') {
-        String shortHash = Util.shortHash(checkoutInformation)
-
-        String branchTag = "${info.branch}-${shortHash}"
-
-        if (configuration.push) {
-            // if there's a version defined in the config, generate a "version.build-hash"
-            // tag for the image. This will typically look like 1.2.3-abcdef;
-            // otherwise, use the branch tag.
-            // This is to ensure we always have a unique tag for each image, since the
-            // "latest" tag will be overwritten by subsequent builds.
-            if (configuration.baseVersion) {
-                tags.add("${configuration.baseVersion}-${shortHash}")
-            } else {
-                tags.add(branchTag)
-            }
-
-            tags.add("latest")
-        } else {
-            // non-deployable branches always get tagged with the branch name,
-            // so it's obvious where they came from
-            tags.add(branchTag)
-        }
-
-        dockerImageName = dockerUtilities.tag(configuration.image, tags[0])
-
-        currentBuild.displayName = "${dockerImageName} (#${info.build})"
-        currentBuild.description = "Image tagged with ${String.join(', ', tags)}"
-    }
-
-    stage('Docker Image Build') {
-
-        // build and tag image
-        dockerImage = docker.build(dockerImageName, "${configuration.buildArgs} ${configuration.buildContext}")
-        tags.each { tag -> dockerImage.tag(tag) }
-
-        // get the unique image ID
-        String dockerImageId = util.sh("docker images ${dockerImageName} --format '{{.ID}}' | head -n 1", quiet: true).trim()
-
-        // log the docker image data for all built tags
-        String patterns = String.join('|', tags.collect { tag -> Pattern.quote("${tag}") })
-        String dockerImageMetadata = util.sh("""\
-            docker images '${configuration.image}' |\
-            grep -E 'REPOSITORY|${dockerImageId}' |\
-            grep -P '(^REPOSITORY\\s+|${patterns})'\
-            """, quiet: true).trim()
-
-        log.info("Built the following images:\n${dockerImageMetadata}")
-    }
-
-    if (configuration.push) {
-        stage('Docker image Push') {
-            scope.withDockerAuthentication(configuration.credentials) {
-                tags.each { tag -> dockerImage.push(tag) }
-            }
-        }
-    }
-}
-
 def call(String githubOrganization, Closure body) {
-    final EffectiveDockerImagePipelineConfiguration configuration
-    final ScopeUtility scope = new ScopeUtility()
-
-    // add standard pipeline wrappers.
-    // this command also allocates a build agent for running the build.
-    scope.withStandardPipelineWrappers {
-
-        stage('Parse Configuration') {
-            configuration = parseConfiguration(githubOrganization, body)
-        }
-
-        // kill build if it goes longer than a given number of minutes without logging anything
-        scope.withTimeout(configuration.timeoutMinutes) {
-
-            // run build inside of docker build image
-            scope.inDockerImage(configuration.buildAgent) {
-
-                build(configuration)
-
-            }
-        }
-    }
+    new DockerPipelineTemplate(this).call({
+        CheckoutInformation scmInfo -> return parseConfiguration(githubOrganization, scmInfo, body)
+    })
 }
 
