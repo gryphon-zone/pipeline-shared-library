@@ -40,7 +40,7 @@ def withTimeout(minutes = 10, Closure body) {
 }
 
 def withRandomWorkspace(Closure body) {
-    ws("workspace/${Util.entropy()}") {
+    ws("workspace/${Util.entropy(16)}") {
         return body()
     }
 }

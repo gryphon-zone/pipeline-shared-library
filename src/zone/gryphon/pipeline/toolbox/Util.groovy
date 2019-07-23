@@ -22,8 +22,13 @@ import zone.gryphon.pipeline.model.JobInformation
 @Field
 final String silence = '{ set +x; } 2> /dev/null ;'
 
-static String entropy() {
-    return UUID.randomUUID().toString().replace("-", "")
+static String entropy(int len = 32) {
+    int count = (int) Math.ceil(len / 32.0)
+    String out = ''
+    for (int i = 0; i < count; i++) {
+        out += UUID.randomUUID().toString().replace("-", "")
+    }
+    return out.substring(0, len)
 }
 
 static String directoryOf(String path) {
