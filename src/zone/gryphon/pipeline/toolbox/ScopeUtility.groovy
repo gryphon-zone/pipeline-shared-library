@@ -15,6 +15,8 @@
 
 package zone.gryphon.pipeline.toolbox
 
+import zone.gryphon.pipeline.model.CheckoutInformation
+
 def withTimestamps(Closure body) {
     timestamps {
         return body()
@@ -141,6 +143,8 @@ def withGpgKey(String keyId, String signingKeyId, String keyIdEnvVariable, Closu
 def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
     String executor = "${configuration['executor'] ?: 'docker'}"
 
+    final CheckoutInformation checkoutInformation
+
     long start = System.currentTimeMillis()
 
     // add support for ANSI color
@@ -151,7 +155,7 @@ def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
 
             try {
 
-                log.info('Enabling default build timeout')
+                log.info('Enabling global build timeout...')
 
                 // no build is allowed to run for more than 1 hour
                 this.withAbsoluteTimeout(60) {
@@ -159,8 +163,14 @@ def withStandardPipelineWrappers(Map configuration = [:], Closure body) {
                     // allocate executor node
                     this.withExecutor(executor) {
 
-                        return body()
+                        stage('Checkout Project') {
+                            log.info('Checking out project...')
 
+                            checkoutInformation = new Util().checkoutProject()
+                        }
+
+                        // invoke body with the information from checkout
+                        return body(checkoutInformation)
                     }
                 }
 
