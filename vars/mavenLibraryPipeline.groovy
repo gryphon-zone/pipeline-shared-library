@@ -31,6 +31,8 @@ private String readMavenVersion(boolean trimSnapshot = true) {
             .replace('\r\n', '')
             .trim()
 
+    log.info("POM version: ${pomVersion}")
+
     if (trimSnapshot) {
         return pomVersion.replace('-SNAPSHOT', '')
     }
