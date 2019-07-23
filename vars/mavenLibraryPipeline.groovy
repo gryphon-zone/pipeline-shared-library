@@ -121,7 +121,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
 
     stage('Maven Dependency Logging') {
 
-        log.info('Logging Maven project dependencies')
+        log.info('Logging Maven project dependencies...')
 
         try {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
@@ -133,7 +133,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
 
     stage('Maven Build') {
 
-        log.info("Running maven build with arguments \"${config.arguments}\"")
+        log.info("Running maven build with arguments \"${config.arguments}\"...")
 
         performBuild(config, util, mavenOpts)
     }
@@ -141,7 +141,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     if (config.release) {
         stage('Maven release') {
 
-            log.info("Performing maven release")
+            log.info("Performing maven release...")
 
             // note: maven arguments for release intentionally aren't configurable
             performRelease(util, version, mavenOpts)
