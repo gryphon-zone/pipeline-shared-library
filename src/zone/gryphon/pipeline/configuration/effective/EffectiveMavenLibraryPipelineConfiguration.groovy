@@ -15,6 +15,8 @@
 
 package zone.gryphon.pipeline.configuration.effective
 
+import zone.gryphon.pipeline.model.CheckoutInformation
+
 class EffectiveMavenLibraryPipelineConfiguration {
 
     /**
@@ -33,9 +35,5 @@ class EffectiveMavenLibraryPipelineConfiguration {
 
     String junitResultsPattern
 
-    /**
-     * Build version
-     */
-    String version
-
+    CheckoutInformation checkoutInformation
 }

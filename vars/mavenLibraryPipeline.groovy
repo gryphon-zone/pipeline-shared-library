@@ -31,8 +31,6 @@ private String readMavenVersion(boolean trimSnapshot = true) {
             .replace('\r\n', '')
             .trim()
 
-    log.info("POM version: ${pomVersion}")
-
     if (trimSnapshot) {
         return pomVersion.replace('-SNAPSHOT', '')
     }
@@ -106,7 +104,16 @@ private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config
 
 private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     final Util util = new Util()
+    final JobInformation info = util.getJobInformation()
+
+    // generates version tag in the form <pom>.<build>-<commit>
+    // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
+    log.info('Calculating build version...')
+    String version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
     String mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+
+    currentBuild.displayName = "${version} (#${info.build})"
+    currentBuild.description = config.release ? 'Release Project' : 'Build Project'
 
     stage('Maven Dependency Logging') {
 
@@ -133,7 +140,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
             log.info("Performing maven release")
 
             // note: maven arguments for release intentionally aren't configurable
-            performRelease(util, config.version, mavenOpts)
+            performRelease(util, version, mavenOpts)
         }
     }
 }
@@ -185,14 +192,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
     out.buildAgent = config.buildAgent
     out.timeoutMinutes = config.idleTimeout
     out.junitResultsPattern = config.junitResultsPattern
-
-    // generates version tag in the form <pom>.<build>-<commit>
-    // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
-    log.info('Calculating build version...')
-    out.version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(checkoutInformation)}"
-
-    currentBuild.displayName = "${out.version} (#${info.build})"
-    currentBuild.description = out.release ? 'Release Project' : 'Build Project'
+    out.checkoutInformation = checkoutInformation
 
     helper.printConfiguration([
             'Deployable branches'    : config.deployableBranchRegex,
@@ -204,7 +204,6 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
             'Build agent'            : out.buildAgent,
             'Maven build arguments'  : out.arguments,
             'Perform Maven release'  : out.release,
-            'Build version'          : out.version,
             'JUnit reports directory': out.junitResultsPattern,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
