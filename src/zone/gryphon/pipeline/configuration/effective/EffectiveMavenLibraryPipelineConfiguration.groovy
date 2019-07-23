@@ -15,11 +15,19 @@
 
 package zone.gryphon.pipeline.configuration.effective
 
+import zone.gryphon.pipeline.model.CheckoutInformation
+
 class EffectiveMavenLibraryPipelineConfiguration {
 
-    String mavenArguments
+    /**
+     * Maven build arguments
+     */
+    String arguments
 
-    boolean performRelease
+    /**
+     * Perform maven release?
+     */
+    boolean release
 
     int timeoutMinutes
 
@@ -27,4 +35,5 @@ class EffectiveMavenLibraryPipelineConfiguration {
 
     String junitResultsPattern
 
+    CheckoutInformation checkoutInformation
 }

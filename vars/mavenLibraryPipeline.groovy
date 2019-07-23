@@ -26,10 +26,16 @@ import zone.gryphon.pipeline.toolbox.Util
  * Reads the current version of the maven POM in the current directory
  */
 @SuppressWarnings("GrMethodMayBeStatic")
-private String readMavenVersion(final Util util) {
-    return ((String) util.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true))
+private String readMavenVersion(boolean trimSnapshot = true) {
+    String pomVersion = ((String) new Util().sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true))
             .replace('\r\n', '')
             .trim()
+
+    if (trimSnapshot) {
+        return pomVersion.replace('-SNAPSHOT', '')
+    }
+
+    return pomVersion
 }
 
 @SuppressWarnings("GrMethodMayBeStatic")
@@ -90,7 +96,7 @@ private def performRelease(final Util util, final String releaseVersion, final S
 @SuppressWarnings("GrMethodMayBeStatic")
 private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config, final Util util, String mavenOpts) {
     try {
-        util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.mavenArguments}", returnType: 'none')
+        util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.arguments}", returnType: 'none')
     } finally {
         junit(allowEmptyResults: true, testResults: config.junitResultsPattern)
     }
@@ -99,52 +105,23 @@ private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config
 private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     final Util util = new Util()
     final JobInformation info = util.getJobInformation()
-    boolean abort = false
-    CheckoutInformation checkoutInformation
-    String version
-    String mavenOpts
 
-    stage('Checkout Project') {
+    // generates version tag in the form <pom>.<build>-<commit>
+    // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
+    log.info('Calculating build version...')
+    final String version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
+    log.info("Build version calculated to be \"${version}\"")
 
-        // enable git color before performing checkout
-        util.enableGitColor()
+    currentBuild.displayName = "${version} (#${info.build})"
+    currentBuild.description = config.release ? 'Release Project' : 'Build Project'
 
-        checkoutInformation = util.checkoutProject()
-    }
-
-    stage('Configure Project') {
-
-        // generates version tag in the form <pom>.<build>-<commit>
-        // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
-        // NOTE: if there is no maven pom present, `readMavenVersion()` returns "1"
-        log.info('Calculating build version')
-        version = "${readMavenVersion(util).replace('-SNAPSHOT', '')}.${info.build}-${checkoutInformation.gitCommit.substring(0, 7)}"
-
-        currentBuild.displayName = "${version} (#${info.build})"
-        currentBuild.description = config.performRelease ? 'Release Project' : 'Build Project'
-
-        log.debug('Ensuring maven POM exists')
-        if (!fileExists('pom.xml')) {
-            log.error('no pom.xml found, aborting build')
-            unstable('pom.xml not present in project root')
-            abort = true
-            return
-        }
-
-        // set up global maven settings
-        util.configureMavenSettingsFile()
-
-        log.info('Calculating \'$MAVEN_OPTS\' variable')
-        mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
-    }
-
-    if (abort) {
-        return
-    }
+    log.info("Calculating \"MAVEN_OPTS\" variable...")
+    final String mavenOpts = (util.sh('echo -n ${MAVEN_OPTS:-}', quiet: true) + ' -Djansi.force=true').trim()
+    log.info("\"MAVEN_OPTS\" variable calculated to be \"${mavenOpts}\"")
 
     stage('Maven Dependency Logging') {
 
-        log.info('Logging Maven project dependencies')
+        log.info('Logging Maven project dependencies...')
 
         try {
             util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
@@ -156,15 +133,15 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
 
     stage('Maven Build') {
 
-        log.info("Running maven build with arguments \"${config.mavenArguments}\"")
+        log.info("Running maven build with arguments \"${config.arguments}\"...")
 
         performBuild(config, util, mavenOpts)
     }
 
-    if (config.performRelease) {
+    if (config.release) {
         stage('Maven release') {
 
-            log.info("Performing maven release")
+            log.info("Performing maven release...")
 
             // note: maven arguments for release intentionally aren't configurable
             performRelease(util, version, mavenOpts)
@@ -172,59 +149,54 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     }
 }
 
-EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organization, Closure body) {
-    final Util util = new Util()
+EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
+        String organization,
+        CheckoutInformation checkoutInformation,
+        Closure body) {
 
-    final EffectiveMavenLibraryPipelineConfiguration finalConfig = new EffectiveMavenLibraryPipelineConfiguration()
+    final Util util = new Util()
+    final EffectiveMavenLibraryPipelineConfiguration out = new EffectiveMavenLibraryPipelineConfiguration()
     final ConfigurationHelper helper = new ConfigurationHelper()
     final JobInformation info = util.getJobInformation()
+    final MavenLibraryPipelineConfiguration config = helper.configure(organization, body, new MavenLibraryPipelineConfiguration())
+    final boolean deployable = helper.isDeployable(config, info)
+    final List buildParameters = []
 
-    MavenLibraryPipelineConfiguration config = helper.configure(organization, body, new MavenLibraryPipelineConfiguration())
+    // set up global maven settings
+    util.configureMavenSettingsFile()
 
-    boolean deployable = helper.isDeployable(config, info)
-
-    String defaultMavenArgs
-    List buildParameters = []
+    buildParameters.add(stringParam(
+            defaultValue: deployable ? config.mavenDeployArguments : config.mavenNonDeployArguments,
+            description: 'The arguments for the Maven CI build',
+            name: 'arguments'
+    ))
 
     if (deployable) {
         buildParameters.add(
                 booleanParam(
                         defaultValue: config.automaticallyRelease,
-                        description: 'Whether or not to release the maven artifacts',
-                        name: 'performRelease'
+                        description: 'Whether or not to release the Maven artifacts to Nexus Central',
+                        name: 'release'
                 )
         )
-
-        defaultMavenArgs = config.mavenDeployArguments
-    } else {
-        defaultMavenArgs = config.mavenNonDeployArguments
     }
 
-    buildParameters.add(0, stringParam(
-            defaultValue: defaultMavenArgs,
-            description: 'Maven build arguments',
-            name: 'mavenArguments'
-    ))
-
-    List calculatedJobProperties = helper.calculateJobProperties(config, (Object) parameters(buildParameters))
-
-    // set job properties
-    //noinspection GroovyAssignabilityCheck
-    properties(calculatedJobProperties)
-
-    finalConfig.buildAgent = config.buildAgent
-    finalConfig.timeoutMinutes = config.idleTimeout
-    finalConfig.junitResultsPattern = config.junitResultsPattern
+    List calculatedJobProperties = helper.calculateAndAssignJobProperties(config, (Object) parameters(buildParameters))
 
     if (util.buildWasTriggerByCommit()) {
         // SCM change triggered build, use the parameter definitions from the configuration
-        finalConfig.mavenArguments = finalConfig.performRelease ? config.mavenDeployArguments : config.mavenNonDeployArguments
-        finalConfig.performRelease = deployable && "${config.automaticallyRelease}".trim().toBoolean()
+        out.release = deployable && "${config.automaticallyRelease}".trim().toBoolean()
+        out.arguments = out.release ? config.mavenDeployArguments : config.mavenNonDeployArguments
     } else {
         // manual build, use the values passed in the parameters
-        finalConfig.mavenArguments = "${params.mavenArguments}"
-        finalConfig.performRelease = deployable && "${params.performRelease}".trim().toBoolean()
+        out.release = deployable && "${params.release}".trim().toBoolean()
+        out.arguments = "${params.arguments}"
     }
+
+    out.buildAgent = config.buildAgent
+    out.timeoutMinutes = config.idleTimeout
+    out.junitResultsPattern = config.junitResultsPattern
+    out.checkoutInformation = checkoutInformation
 
     helper.printConfiguration([
             'Deployable branches'    : config.deployableBranchRegex,
@@ -232,15 +204,15 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(String organizatio
             'SCM organization'       : info.organization,
             'SCM repository'         : info.repository,
             'SCM branch'             : info.branch,
-            'Job is deployable'      : deployable,
-            'Build agent'            : finalConfig.buildAgent,
-            'Maven build arguments'  : finalConfig.mavenArguments,
-            'Perform Maven release'  : finalConfig.performRelease,
-            'JUnit reports directory': finalConfig.junitResultsPattern,
+            'Is job deployable'      : deployable,
+            'Build agent'            : out.buildAgent,
+            'Maven build arguments'  : out.arguments,
+            'Perform Maven release'  : out.release,
+            'JUnit reports directory': out.junitResultsPattern,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
-    return finalConfig
+    return out
 }
 
 def call(String githubOrganization, Closure body) {
@@ -249,10 +221,24 @@ def call(String githubOrganization, Closure body) {
 
     // add standard pipeline wrappers.
     // this command also allocates a build agent for running the build
-    scope.withStandardPipelineWrappers {
+    scope.withStandardPipelineWrappers { CheckoutInformation checkoutInformation ->
 
-        stage('Parse Configuration') {
-            configuration = parseConfiguration(githubOrganization, body)
+        stage('Configure Project') {
+
+            if (!fileExists('pom.xml')) {
+                String message = 'pom.xml not present in project root'
+                log.error(message)
+                unstable(message)
+                currentBuild.description = message
+                return
+            }
+
+            configuration = parseConfiguration(githubOrganization, checkoutInformation, body)
+        }
+
+        // null configuration means project is invalid and we should abort the build
+        if (configuration == null) {
+            return
         }
 
         // kill build if it goes longer than a given number of minutes without logging anything

@@ -50,16 +50,9 @@ class DockerPipelineTemplate {
         configurationClosure.delegate = this
 
         final EffectiveDockerPipelineTemplateConfiguration configuration
-        final CheckoutInformation checkoutInformation
 
         // add standard pipeline wrappers, and allocate default build executor (node)
-        scope.withStandardPipelineWrappers {
-
-            context.stage('Checkout Project') {
-                context.log.info('Checking out project...')
-
-                checkoutInformation = util.checkoutProject()
-            }
+        scope.withStandardPipelineWrappers { CheckoutInformation checkoutInformation ->
 
             context.stage('Parse Configuration') {
                 context.log.info('Parsing build configuration...')
