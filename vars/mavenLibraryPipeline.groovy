@@ -117,7 +117,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
 
     log.info("Calculating \"MAVEN_OPTS\" variable...")
     final String mavenOpts = (util.sh('echo -n ${MAVEN_OPTS:-}', quiet: true) + ' -Djansi.force=true').trim()
-    log.info("Calculated \"MAVEN_OPTS\" variable to be \"${mavenOpts}\"")
+    log.info("\"MAVEN_OPTS\" variable calculated to be \"${mavenOpts}\"")
 
     stage('Maven Dependency Logging') {
 
