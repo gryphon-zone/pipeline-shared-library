@@ -109,11 +109,15 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     // generates version tag in the form <pom>.<build>-<commit>
     // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
     log.info('Calculating build version...')
-    String version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
-    String mavenOpts = (util.sh('echo -n $MAVEN_OPTS', quiet: true) + ' -Djansi.force=true').trim()
+    final String version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
+    log.info("Build version calculated to be \"${version}\"")
 
     currentBuild.displayName = "${version} (#${info.build})"
     currentBuild.description = config.release ? 'Release Project' : 'Build Project'
+
+    log.info("Calculating \"MAVEN_OPTS\" variable...")
+    final String mavenOpts = (util.sh('echo -n ${MAVEN_OPTS:-}', quiet: true) + ' -Djansi.force=true').trim()
+    log.info("Calculated \"MAVEN_OPTS\" variable to be \"${mavenOpts}\"")
 
     stage('Maven Dependency Logging') {
 
