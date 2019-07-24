@@ -106,6 +106,11 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
     final Util util = new Util()
     final JobInformation info = util.getJobInformation()
 
+    // set up global maven settings
+    log.info('Installing Maven settings file...')
+    util.configureMavenSettingsFile()
+    log.info('Maven settings file installed')
+
     // generates version tag in the form <pom>.<build>-<commit>
     // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
     log.info('Calculating build version...')
@@ -161,9 +166,6 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
     final MavenLibraryPipelineConfiguration config = helper.configure(organization, body, new MavenLibraryPipelineConfiguration())
     final boolean deployable = helper.isDeployable(config, info)
     final List buildParameters = []
-
-    // set up global maven settings
-    util.configureMavenSettingsFile()
 
     buildParameters.add(stringParam(
             defaultValue: deployable ? config.mavenDeployArguments : config.mavenNonDeployArguments,
