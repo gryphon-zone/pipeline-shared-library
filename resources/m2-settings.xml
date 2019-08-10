@@ -45,19 +45,6 @@
                 <name>Sonatype OSS Repository Hosting</name>
                 <url>https://oss.sonatype.org/content/groups/public</url>
             </repository>
-            <repository>
-                <releases>
-                    <enabled>true</enabled>
-                    <updatePolicy>daily</updatePolicy>
-                    <checksumPolicy>fail</checksumPolicy>
-                </releases>
-                <snapshots>
-                    <enabled>false</enabled>
-                </snapshots>
-                <id>jenkins</id>
-                <name>Jenkins CI Hosting</name>
-                <url>https://repo.jenkins-ci.org/public</url>
-            </repository>
         </repositories>
     </profile>
   </profiles>
