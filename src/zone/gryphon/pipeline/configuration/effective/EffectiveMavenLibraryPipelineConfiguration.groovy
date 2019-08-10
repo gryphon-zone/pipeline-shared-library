@@ -35,5 +35,7 @@ class EffectiveMavenLibraryPipelineConfiguration {
 
     String junitResultsPattern
 
+    String jacocoResultsPattern
+
     CheckoutInformation checkoutInformation
 }

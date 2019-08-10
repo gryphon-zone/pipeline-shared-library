@@ -24,6 +24,8 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
     String junitResultsPattern = '**/target/surefire-reports/*.xml'
 
+    String jacocoResultsPattern = '**/target/jacoco.exec'
+
     String mavenDeployArguments = 'clean verify -Dstyle.color=always -V -B'
 
     String mavenNonDeployArguments = 'clean verify -Dstyle.color=always -V -B'
@@ -38,6 +40,10 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
     void junitResultsPattern(String junitResultsPattern) {
         this.junitResultsPattern = junitResultsPattern
+    }
+
+    void jacocoResultsPattern(String jacocoResultsPattern) {
+        this.jacocoResultsPattern = jacocoResultsPattern
     }
 
     void mavenDeployArguments(String mavenDeployArguments) {

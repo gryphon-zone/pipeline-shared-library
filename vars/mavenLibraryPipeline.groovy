@@ -99,6 +99,12 @@ private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config
         util.sh("MAVEN_OPTS=\"${mavenOpts}\" mvn ${config.arguments}", returnType: 'none')
     } finally {
         junit(allowEmptyResults: true, testResults: config.junitResultsPattern)
+
+        try {
+            jacoco(execPattern: config.jacocoResultsPattern)
+        } catch (Exception e) {
+            log.error("Failed to save Jacoco results: ${e.message}")
+        }
     }
 }
 
@@ -198,6 +204,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
     out.buildAgent = config.buildAgent
     out.timeoutMinutes = config.idleTimeout
     out.junitResultsPattern = config.junitResultsPattern
+    out.jacocoResultsPattern = config.jacocoResultsPattern
     out.checkoutInformation = checkoutInformation
 
     helper.printConfiguration([
@@ -211,6 +218,7 @@ EffectiveMavenLibraryPipelineConfiguration parseConfiguration(
             'Maven build arguments'  : out.arguments,
             'Perform Maven release'  : out.release,
             'JUnit reports directory': out.junitResultsPattern,
+            'Jacoco coverage file'   : out.jacocoResultsPattern,
             'Job properties'         : helper.convertPropertiesToPrintableForm(calculatedJobProperties)
     ])
 
