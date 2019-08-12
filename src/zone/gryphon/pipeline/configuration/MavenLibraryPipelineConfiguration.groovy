@@ -32,11 +32,11 @@ class MavenLibraryPipelineConfiguration extends BasePipelineConfiguration {
 
     /**
      * Whether to release commit to maven central.
-     * Requires project contain no snapshot dependencies.
+     * Requires that the project contains no snapshot dependencies.
      *
      * Ignored if the branch being built does not match the deployableBranchRegex
      */
-    boolean automaticallyRelease = true
+    boolean automaticallyRelease = false
 
     void junitResultsPattern(String junitResultsPattern) {
         this.junitResultsPattern = junitResultsPattern
