@@ -154,7 +154,7 @@ CheckoutInformation checkoutProject(boolean enableColor = true) {
     return CheckoutInformation.fromCheckoutVariables(vars)
 }
 
-void configureMavenSettingsFile() {
+void installMavenSettingsFile() {
     log.debug("Installing Maven settings file")
 
     final String file = 'settings.xml'
@@ -168,4 +168,16 @@ void configureMavenSettingsFile() {
          mkdir -p "\${HOME}/.m2" && \
          mv ${file} \${HOME}/.m2/${file}
          """.stripIndent(), quiet: true)
+}
+
+/**
+ * Returns the version of the maven project in the current working directory.
+ * `mvn` must be available for the command to work.
+ */
+String determineMavenProjectVersion() {
+    def version = this.sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true)
+
+    return ((String) version)
+            .replace('\r\n', '')
+            .trim()
 }

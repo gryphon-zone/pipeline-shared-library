@@ -22,22 +22,6 @@ import zone.gryphon.pipeline.model.JobInformation
 import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
-/**
- * Reads the current version of the maven POM in the current directory
- */
-@SuppressWarnings("GrMethodMayBeStatic")
-private String readMavenVersion(boolean trimSnapshot = true) {
-    String pomVersion = ((String) new Util().sh("mvn help:evaluate -Dexpression=project.version 2>/dev/null | sed -n -e '/^\\[.*\\]/ !{ /^[0-9]/ { p; q } }'", quiet: true))
-            .replace('\r\n', '')
-            .trim()
-
-    if (trimSnapshot) {
-        return pomVersion.replace('-SNAPSHOT', '')
-    }
-
-    return pomVersion
-}
-
 @SuppressWarnings("GrMethodMayBeStatic")
 private def performRelease(final Util util, final String releaseVersion, final String mavenOpts) {
     final ScopeUtility scope = new ScopeUtility()
@@ -109,26 +93,22 @@ private def performBuild(final EffectiveMavenLibraryPipelineConfiguration config
 }
 
 private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
+    final String mavenOpts = '-Djansi.force=true'
     final Util util = new Util()
     final JobInformation info = util.getJobInformation()
 
     // set up global maven settings
-    log.info('Installing Maven settings file...')
-    util.configureMavenSettingsFile()
-    log.info('Maven settings file installed')
+    util.installMavenSettingsFile()
 
     // generates version tag in the form <pom>.<build>-<commit>
     // assuming poms use major.minor versioning, will produce versions like 1.2.3-asdfdef
     log.info('Calculating build version...')
-    final String version = "${readMavenVersion(true)}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
+    String mavenProjectVersion = util.determineMavenProjectVersion().replace('-SNAPSHOT', '')
+    final String version = "${mavenProjectVersion}.${info.build}-${Util.shortHash(config.checkoutInformation)}"
     log.info("Build version calculated to be \"${version}\"")
 
     currentBuild.displayName = "${version} (#${info.build})"
     currentBuild.description = config.release ? 'Release Project' : 'Build Project'
-
-    log.info("Calculating \"MAVEN_OPTS\" variable...")
-    final String mavenOpts = (util.sh('echo -n ${MAVEN_OPTS:-}', quiet: true) + ' -Djansi.force=true').trim()
-    log.info("\"MAVEN_OPTS\" variable calculated to be \"${mavenOpts}\"")
 
     stage('Maven Dependency Logging') {
 
