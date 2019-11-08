@@ -37,6 +37,17 @@ void main() {
         sshagent(['github-ssh']) {
             util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no >> ~/.ssh/config', quiet: true)
 
+            util.installMavenSettingsFile()
+
+
+            util.enableGitColor()
+
+            util.sh("""\
+            git config user.email 'jenkins@gryphon.zone' && \
+            git config user.name 'Jenkins' \
+            """.stripIndent().trim(), returnType: 'none')
+
+
             git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
 
             scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
