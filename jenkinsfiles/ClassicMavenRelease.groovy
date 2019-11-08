@@ -109,15 +109,13 @@ void main() {
 
                     git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
 
-                    util.sh('''
-                    git config user.email 'jenkins@gryphon.zone'
-                    git config user.name 'Jenkins'
-                    ''', returnType: 'none')
-
                     util.sh("""
                     export MAVEN_OPTS='-Djansi.force=true'
+                    git config user.email 'jenkins@gryphon.zone'
+                    git config user.name 'Jenkins'
                     ${mvn} release:prepare ${releaseVersionArgument} ${postReleaseVersionArgument} -Darguments='-Dstyle.color=always'
                     ${mvn} release:perform -Dossrh.username='${OSSRH_USERNAME}' -Dossrh.password='${OSSRH_PASSWORD}' -Darguments='-Dstyle.color=always -DskipTests=true'
+                    git status
                     """, returnType: 'none')
                 }
             }
