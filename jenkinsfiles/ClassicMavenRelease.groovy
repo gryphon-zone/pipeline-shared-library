@@ -15,9 +15,9 @@
  */
 @Library('gryphon-zone/pipeline-shared-library@master') _
 
-import zone.gryphon.pipeline.toolbox.Util
-import zone.gryphon.pipeline.toolbox.ScopeUtility
 import groovy.transform.Field
+import zone.gryphon.pipeline.toolbox.ScopeUtility
+import zone.gryphon.pipeline.toolbox.Util
 
 @Field final String PARAM_ORG = 'Github Organization'
 @Field final String PARAM_REPO = 'Repository'
@@ -99,24 +99,26 @@ void main() {
 
     // run build inside of docker build image
     scope.inDockerImage("maven:3-jdk-${jdk}", args: '-v jenkins-shared-m2-cache:/root/.m2/repository') {
-        sshagent(['github-ssh']) {
-            scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-                withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
+        stage('Maven Release') {
+            sshagent(['github-ssh']) {
+                scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+                    withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
 
-                    util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no >> ~/.ssh/config', quiet: true)
+                        util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no >> ~/.ssh/config', quiet: true)
 
-                    util.installMavenSettingsFile()
+                        util.installMavenSettingsFile()
 
-                    git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
+                        git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
 
-                    util.sh("""
-                    export MAVEN_OPTS='-Djansi.force=true'
-                    git config user.email 'jenkins@gryphon.zone'
-                    git config user.name 'Jenkins'
-                    ${mvn} release:prepare ${releaseVersionArgument} ${postReleaseVersionArgument} -Darguments='-Dstyle.color=always'
-                    ${mvn} release:perform -Dossrh.username='${OSSRH_USERNAME}' -Dossrh.password='${OSSRH_PASSWORD}' -Darguments='-Dstyle.color=always -DskipTests=true'
-                    git status
-                    """, returnType: 'none')
+                        util.sh("""
+                        export MAVEN_OPTS='-Djansi.force=true'
+                        git config user.email 'jenkins@gryphon.zone'
+                        git config user.name 'Jenkins'
+                        ${mvn} release:prepare ${releaseVersionArgument} ${postReleaseVersionArgument} -Darguments='-Dstyle.color=always'
+                        ${mvn} release:perform -Dossrh.username='${OSSRH_USERNAME}' -Dossrh.password='${OSSRH_PASSWORD}' -Darguments='-Dstyle.color=always -DskipTests=true'
+                        git status
+                        """, returnType: 'none')
+                    }
                 }
             }
         }
