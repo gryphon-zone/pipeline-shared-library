@@ -39,6 +39,17 @@ void main() {
 
             git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
 
+            scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+                withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
+
+                    util.sh("""
+                    export MAVEN_OPTS='-Djansi.force=true'
+                    mvn release:prepare -B -V -Dstyle.color=always -DreleaseVersion='${release}' -DdevelopmentVersion='${postRelease}'
+                    mvn release:perform -B -V -Dstyle.color=always -Dossrh.username='${OSSRH_USERNAME}' -Dossrh.password='${OSSRH_PASSWORD}'
+                    """, returnType: 'none')
+                }
+            }
+
             echo "release: ${release}, post release: ${postRelease}"
         }
     }
