@@ -18,6 +18,10 @@
 import zone.gryphon.pipeline.toolbox.ScopeUtility
 import zone.gryphon.pipeline.toolbox.Util
 
+import groovy.transform.Field
+
+//@Field final String
+
 void main() {
     final ScopeUtility scope = new ScopeUtility()
     final Util util = new Util()
@@ -40,15 +44,14 @@ void main() {
             util.installMavenSettingsFile()
 
 
+            git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
+
             util.enableGitColor()
 
             util.sh("""\
             git config user.email 'jenkins@gryphon.zone' && \
             git config user.name 'Jenkins' \
             """.stripIndent().trim(), returnType: 'none')
-
-
-            git(credentialsId: 'github-ssh', url: "git@github.com:${organization}/${repo}.git", branch: branch)
 
             scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
                 withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
