@@ -112,8 +112,8 @@ void main() {
 
                         util.sh("""
                         export MAVEN_OPTS='-Djansi.force=true'
-                        git config user.email 'jenkins@gryphon.zone'
-                        git config user.name 'Jenkins'
+                        git config --global user.email 'jenkins@gryphon.zone'
+                        git config --global user.name 'Jenkins'
                         ${mvn} release:prepare ${releaseVersionArgument} ${postReleaseVersionArgument} -Darguments='-Dstyle.color=always'
                         ${mvn} release:perform -Dossrh.username='${OSSRH_USERNAME}' -Dossrh.password='${OSSRH_PASSWORD}' -Darguments='-Dstyle.color=always -DskipTests=true'
                         git status
