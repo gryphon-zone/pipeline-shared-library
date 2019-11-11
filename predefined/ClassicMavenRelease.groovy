@@ -97,6 +97,8 @@ void main() {
         postReleaseVersionArgument = "-DdevelopmentVersion='${postReleaseVersion}'"
     }
 
+    currentBuild.displayName = "${organization}/${repo}@${releaseVersion} (#${env.BUILD_NUMBER})"
+
     // run build inside of docker build image
     scope.inDockerImage("maven:3-jdk-${jdk}", args: '-v jenkins-shared-m2-cache:/root/.m2/repository') {
         stage('Maven Release') {
