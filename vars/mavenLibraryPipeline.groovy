@@ -40,6 +40,7 @@ private def performRelease(final Util util, final String releaseVersion, final S
 
     sshagent(['github-ssh']) {
         util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config', quiet: true)
+        util.configureGitCommitter()
 
         util.sh("""\
             ${mvn} \

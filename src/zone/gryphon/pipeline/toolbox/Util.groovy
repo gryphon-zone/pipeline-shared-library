@@ -137,6 +137,14 @@ JobInformation getJobInformation() {
     return out
 }
 
+void configureGitCommitter() {
+    // needed to prevent failures when attempting to make commits
+    this.sh('''
+        git config --global user.email 'jenkins@gryphon.zone'
+        git config --global user.name 'Jenkins'
+        ''', returnType: 'none')
+}
+
 CheckoutInformation checkoutProject(boolean enableColor = true) {
 
     if (enableColor) {
@@ -145,11 +153,7 @@ CheckoutInformation checkoutProject(boolean enableColor = true) {
 
     def vars = checkout(scm)
 
-    // needed to prevent failures when attempting to make commits
-    this.sh('''
-            git config --global user.email 'jenkins@gryphon.zone'
-            git config --global user.name 'Jenkins'
-            ''', returnType: 'none')
+    configureGitCommitter()
 
     return CheckoutInformation.fromCheckoutVariables(vars)
 }
