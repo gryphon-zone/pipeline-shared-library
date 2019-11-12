@@ -146,10 +146,10 @@ CheckoutInformation checkoutProject(boolean enableColor = true) {
     def vars = checkout(scm)
 
     // needed to prevent failures when attempting to make commits
-    this.sh("""\
-            git config user.email 'jenkins@gryphon.zone' && \
-            git config user.name 'Jenkins' \
-            """.stripIndent().trim(), returnType: 'none')
+    this.sh('''
+            git config --global user.email 'jenkins@gryphon.zone'
+            git config --global user.name 'Jenkins'
+            ''', returnType: 'none')
 
     return CheckoutInformation.fromCheckoutVariables(vars)
 }
