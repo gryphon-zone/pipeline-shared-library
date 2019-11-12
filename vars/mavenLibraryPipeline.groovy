@@ -38,41 +38,42 @@ private def performRelease(final Util util, final String releaseVersion, final S
         -Dresume=false \
         """.stripIndent().trim()
 
-    util.sh("""\
-        ${mvn} \
-            release:prepare \
-            ${commonPrepareArguments} \
-            -Dtag='${releaseVersion}' \
-            -DsuppressCommitBeforeTag=true \
-            -DupdateWorkingCopyVersions=false \
-            """.stripIndent(), returnType: 'none')
-
-    util.sh("""\
-        ${mvn} \
-            release:prepare \
-            ${commonPrepareArguments} \
-            -DreleaseVersion='${releaseVersion}' \
-            -DdevelopmentVersion='${releaseVersion}-mvn-release-SNAPSHOT' \
-            """.stripIndent(), returnType: 'none')
-
-    scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
-        withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
-
-            // push artifacts
-            util.sh("""\
-                ${mvn} \
-                    release:perform \
-                    -Darguments='-Dstyle.color=always -DskipTests=true' \
-                    -DlocalCheckout='true' \
-                    -Dossrh.username='${OSSRH_USERNAME}' \
-                    -Dossrh.password='${OSSRH_PASSWORD}'
-                    """.stripIndent(), returnType: 'none')
-        }
-    }
-
-    // push release tag to remote
     sshagent(['github-ssh']) {
         util.sh('mkdir -p ~/.ssh && echo StrictHostKeyChecking no > ~/.ssh/config', quiet: true)
+
+        util.sh("""\
+            ${mvn} \
+                release:prepare \
+                ${commonPrepareArguments} \
+                -Dtag='${releaseVersion}' \
+                -DsuppressCommitBeforeTag=true \
+                -DupdateWorkingCopyVersions=false \
+                """.stripIndent(), returnType: 'none')
+
+        util.sh("""\
+            ${mvn} \
+                release:prepare \
+                ${commonPrepareArguments} \
+                -DreleaseVersion='${releaseVersion}' \
+                -DdevelopmentVersion='${releaseVersion}-mvn-release-SNAPSHOT' \
+                """.stripIndent(), returnType: 'none')
+
+        scope.withGpgKey('gpg-signing-key-id', 'gpg-signing-key', 'GPG_KEYID') {
+            withCredentials([usernamePassword(credentialsId: 'ossrh', usernameVariable: 'OSSRH_USERNAME', passwordVariable: 'OSSRH_PASSWORD')]) {
+
+                // push artifacts
+                util.sh("""\
+                    ${mvn} \
+                        release:perform \
+                        -Darguments='-Dstyle.color=always -DskipTests=true' \
+                        -DlocalCheckout='true' \
+                        -Dossrh.username='${OSSRH_USERNAME}' \
+                        -Dossrh.password='${OSSRH_PASSWORD}'
+                        """.stripIndent(), returnType: 'none')
+            }
+        }
+
+        // push release tag to remote
         util.sh("git push origin '${releaseVersion}'", returnType: 'none')
     }
 }
