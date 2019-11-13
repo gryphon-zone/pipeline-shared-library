@@ -117,7 +117,10 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
         log.info('Logging Maven project dependencies...')
 
         try {
-            util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -Dstyle.color=always dependency:tree", returnType: 'none')
+            String dependencyFile = "maven-dependency-tree.txt"
+            util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -q -Dstyle.color=always dependency:tree -DoutputFile='${dependencyFile}' || true", returnType: 'none')
+            archiveArtifacts(allowEmptyArchive: true, artifacts: dependencyFile)
+            util.sh("rm -f '${dependencyFile}'", returnType: 'none', quiet: true)
         } catch (Exception e) {
             log.warn("Failed to calculate project dependencies: ${e}")
             unstable('Failed to calculate project dependencies')
