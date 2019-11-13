@@ -118,7 +118,7 @@ private def build(final EffectiveMavenLibraryPipelineConfiguration config) {
 
         try {
             String dependencyFile = "maven-dependency-tree.txt"
-            util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -q -Dstyle.color=always dependency:tree -DoutputFile='${dependencyFile}' || true", returnType: 'none')
+            util.sh("MAVEN_OPTS='${mavenOpts}' mvn -B -V -q -Dstyle.color=always dependency:tree -DoutputFile='${dependencyFile}' -DappendOutput=true || true", returnType: 'none')
             archiveArtifacts(allowEmptyArchive: true, artifacts: dependencyFile)
             util.sh("rm -f '${dependencyFile}'", returnType: 'none', quiet: true)
         } catch (Exception e) {
